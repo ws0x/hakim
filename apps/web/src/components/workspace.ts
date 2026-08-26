@@ -6,6 +6,7 @@ import { SlideoverDrawer } from "./slideover-drawer.js";
 import { ActiveRecallComponent } from "./active-recall.js";
 import { EngineBridgeModal } from "./engine-bridge-modal.js";
 import { AISynthesisModal } from "./ai-synthesis-modal.js";
+import { ObsidianExportModal } from "./obsidian-export-modal.js";
 import type { AnnotationColor, GraphNode } from "../core/types.js";
 
 export class WorkspaceController {
@@ -16,6 +17,7 @@ export class WorkspaceController {
   private slideover: SlideoverDrawer | null = null;
   private engineBridge: EngineBridgeModal | null = null;
   private aiModal: AISynthesisModal | null = null;
+  private obsidianModal: ObsidianExportModal | null = null;
 
   constructor() {
     this.store = ReadingStateStore.getInstance();
@@ -60,7 +62,14 @@ export class WorkspaceController {
       btnAi.addEventListener("click", () => this.aiModal?.open());
     }
 
-    // 7. Subscribe to Store State Changes
+    // 7. Initialize Obsidian Export Modal
+    this.obsidianModal = new ObsidianExportModal();
+    const btnObsidian = document.getElementById("btn-obsidian-export");
+    if (btnObsidian) {
+      btnObsidian.addEventListener("click", () => this.obsidianModal?.open());
+    }
+
+    // 8. Subscribe to Store State Changes
     this.store.subscribe((state) => this.render(state));
 
     // 6. Setup Search Input Listener
