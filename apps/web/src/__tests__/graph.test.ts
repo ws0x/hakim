@@ -3,15 +3,34 @@ import { CanvasGraphEngine } from "../components/graph-canvas.js";
 import { GraphBuilder } from "../core/graph-builder.js";
 import { DEMO_BOOKS, DEMO_HIGHLIGHTS } from "../core/adapters/demo-data.js";
 
-describe("Canvas 2D Force-Directed Graph Engine", () => {
-  let container: HTMLElement;
-  let engine: CanvasGraphEngine;
+// Helper for Mock DOM
+function createMockElement(tag: string): any {
+  const listeners: Record<string, Function[]> = {};
+  const children: any[] = [];
+  const attributes: Record<string, string> = {};
+  const classList = new Set<string>();
 
-  beforeEach(() => {
-    // Setup Mock DOM Elements for Node/Vitest environment
-    const mockContext = {
+  const el: any = {
+    tagName: tag.toUpperCase(),
+    className: "",
+    classList: {
+      add: (cls: string) => classList.add(cls),
+      remove: (cls: string) => classList.delete(cls),
+      contains: (cls: string) => classList.has(cls),
+    },
+    innerHTML: "",
+    innerText: "",
+    textContent: "",
+    style: { display: "none", width: "1000px", height: "800px", cursor: "" },
+    children,
+    value: "500",
+    checked: true,
+    width: 1000,
+    height: 800,
+    getContext: vi.fn().mockReturnValue({
       scale: vi.fn(),
       clearRect: vi.fn(),
+      fillRect: vi.fn(),
       save: vi.fn(),
       restore: vi.fn(),
       translate: vi.fn(),
@@ -22,6 +41,10 @@ describe("Canvas 2D Force-Directed Graph Engine", () => {
       arc: vi.fn(),
       fill: vi.fn(),
       fillText: vi.fn(),
+      measureText: vi.fn().mockReturnValue({ width: 50 }),
+      createRadialGradient: vi.fn().mockReturnValue({
+        addColorStop: vi.fn(),
+      }),
       strokeStyle: "",
       fillStyle: "",
       lineWidth: 1,
@@ -29,30 +52,65 @@ describe("Canvas 2D Force-Directed Graph Engine", () => {
       textAlign: "",
       textBaseline: "",
       globalAlpha: 1,
-    };
+      shadowColor: "",
+      shadowBlur: 0,
+    }),
+    addEventListener: vi.fn((event: string, handler: Function) => {
+      listeners[event] = listeners[event] || [];
+      listeners[event].push(handler);
+    }),
+    click: vi.fn(() => {
+      listeners["click"]?.forEach((h) => h({ target: el }));
+    }),
+    appendChild: vi.fn((child: any) => {
+      children.push(child);
+      return child;
+    }),
+    removeChild: vi.fn((child: any) => {
+      const idx = children.indexOf(child);
+      if (idx !== -1) children.splice(idx, 1);
+    }),
+    getBoundingClientRect: vi.fn().mockReturnValue({ width: 1000, height: 800, top: 0, left: 0, right: 1000, bottom: 800 }),
+    getAttribute: vi.fn((attr: string) => attributes[attr] || null),
+    setAttribute: vi.fn((attr: string, val: string) => {
+      attributes[attr] = val;
+    }),
+    querySelector: vi.fn((sel: string) => {
+      return el.querySelectorAll(sel)[0] || null;
+    }),
+    querySelectorAll: vi.fn((sel: string) => {
+      const results: any[] = [];
+      function search(node: any) {
+        if (sel.startsWith(".") && node.className && node.className.includes(sel.slice(1))) {
+          results.push(node);
+        } else if (sel.startsWith("#") && node.id === sel.slice(1)) {
+          results.push(node);
+        } else if (node.tagName && node.tagName.toLowerCase() === sel.toLowerCase()) {
+          results.push(node);
+        }
+        if (node.children) {
+          node.children.forEach(search);
+        }
+      }
+      search(el);
+      return results;
+    }),
+  };
 
-    const mockCanvas = {
-      className: "",
-      style: { width: "0px", height: "0px", cursor: "" },
-      width: 1000,
-      height: 800,
-      getContext: vi.fn().mockReturnValue(mockContext),
-      addEventListener: vi.fn(),
-      getBoundingClientRect: vi.fn().mockReturnValue({ width: 1000, height: 800, top: 0, left: 0, right: 1000, bottom: 800 }),
-    };
+  return el;
+}
 
-    const mockContainer = {
-      appendChild: vi.fn(),
-      querySelector: vi.fn().mockImplementation((sel: string) => sel === "canvas" ? mockCanvas : null),
-      getBoundingClientRect: vi.fn().mockReturnValue({ width: 1000, height: 800, top: 0, left: 0, right: 1000, bottom: 800 }),
-    };
+describe("Canvas 2D Force-Directed Graph Engine", () => {
+  let container: HTMLElement;
+  let engine: CanvasGraphEngine;
 
-    // Global document mock
+  beforeEach(() => {
+    container = createMockElement("div");
+
     globalThis.document = {
-      createElement: vi.fn().mockImplementation((tag: string) => {
-        if (tag === "canvas") return mockCanvas;
-        return {};
-      }),
+      createElement: vi.fn((tag: string) => createMockElement(tag)),
+      getElementById: vi.fn(() => createMockElement("div")),
+      body: createMockElement("body"),
     } as any;
 
     globalThis.window = {
@@ -63,7 +121,6 @@ describe("Canvas 2D Force-Directed Graph Engine", () => {
     globalThis.requestAnimationFrame = vi.fn().mockReturnValue(1);
     globalThis.cancelAnimationFrame = vi.fn();
 
-    container = mockContainer as unknown as HTMLElement;
     engine = new CanvasGraphEngine(container);
   });
 
@@ -111,5 +168,27 @@ describe("Canvas 2D Force-Directed Graph Engine", () => {
 
     const state2 = engine.togglePhysics();
     expect(state2).toBe(true);
+  });
+
+  it("smoothly triggers flyToNode camera centering", () => {
+    const graphData = GraphBuilder.buildGraph(DEMO_BOOKS, DEMO_HIGHLIGHTS);
+    engine.setData(graphData);
+
+    const targetNode = (engine as any).nodes[0];
+    expect(targetNode).toBeDefined();
+
+    engine.flyToNode(targetNode, 2.0);
+    expect((engine as any).targetScale).toBe(2.0);
+    expect((engine as any).selectedNode).toBe(targetNode);
+  });
+
+  it("initializes and updates Obsidian HUD physics parameters", () => {
+    expect(engine.config.repulsion).toBe(550);
+    expect(engine.config.linkDistance).toBe(110);
+    expect(engine.config.showLabels).toBe(true);
+    expect(engine.config.showParticles).toBe(true);
+
+    engine.config.repulsion = 800;
+    expect(engine.config.repulsion).toBe(800);
   });
 });
