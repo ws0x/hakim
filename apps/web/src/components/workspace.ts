@@ -7,6 +7,7 @@ import { ActiveRecallComponent } from "./active-recall.js";
 import { EngineBridgeModal } from "./engine-bridge-modal.js";
 import { AISynthesisModal } from "./ai-synthesis-modal.js";
 import { ObsidianExportModal } from "./obsidian-export-modal.js";
+import { CommandPaletteComponent } from "./command-palette.js";
 import type { AnnotationColor, GraphNode } from "../core/types.js";
 
 export class WorkspaceController {
@@ -18,6 +19,7 @@ export class WorkspaceController {
   private engineBridge: EngineBridgeModal | null = null;
   private aiModal: AISynthesisModal | null = null;
   private obsidianModal: ObsidianExportModal | null = null;
+  private commandPalette: CommandPaletteComponent | null = null;
 
   constructor() {
     this.store = ReadingStateStore.getInstance();
@@ -69,7 +71,20 @@ export class WorkspaceController {
       btnObsidian.addEventListener("click", () => this.obsidianModal?.open());
     }
 
-    // 8. Subscribe to Store State Changes
+    // 8. Initialize Spotlight Command Palette (⌘K)
+    this.commandPalette = new CommandPaletteComponent({
+      onSelectView: (view) => this.store.setView(view),
+      onOpenAi: () => this.aiModal?.open(),
+      onOpenObsidian: () => this.obsidianModal?.open(),
+      onOpenEngine: () => this.engineBridge?.open(),
+    });
+
+    const btnSpotlight = document.getElementById("btn-spotlight-trigger");
+    if (btnSpotlight) {
+      btnSpotlight.addEventListener("click", () => this.commandPalette?.open());
+    }
+
+    // 9. Subscribe to Store State Changes
     this.store.subscribe((state) => this.render(state));
 
     // 6. Setup Search Input Listener

@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hakim: Visual Reading Intelligence & Knowledge Graph</title>
   <link rel="icon" type="image/svg+xml" href="src/assets/logo.svg" />
+  <!-- Google Fonts: Inter & Newsreader for Literary Editorial Feel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="src/styles/workspace.css" />
 </head>
 <body class="app-body">
@@ -12,11 +16,14 @@
   <header class="app-header">
     <div class="app-brand">
       <img src="src/assets/logo.svg" alt="Hakim Logo" class="app-logo" />
-      <span class="app-title">Hakim Intelligence</span>
-      <select id="dataset-select" class="app-dataset-select" aria-label="Select Dataset">
-        <option value="demo">Sample Library (5 Books, 15 Quotes)</option>
-        <option value="custom" disabled>My Imported Library</option>
-      </select>
+      <span class="app-title">Hakim</span>
+      <button id="btn-spotlight-trigger" class="app-spotlight-btn" title="Spotlight Command Palette (⌘K)">
+        <svg class="spotlight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span>Search or Jump to...</span>
+        <kbd class="spotlight-kbd">⌘K</kbd>
+      </button>
     </div>
 
     <div class="app-view-switcher">
