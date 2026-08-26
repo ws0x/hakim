@@ -41,6 +41,8 @@ function createMockElement(tag: string): any {
       function search(node: any) {
         if (sel.startsWith(".") && node.className && node.className.includes(sel.slice(1))) {
           results.push(node);
+        } else if (sel.startsWith(".") && node.innerHTML && node.innerHTML.includes(sel.slice(1))) {
+          results.push(createMockElement("button"));
         } else if (sel.startsWith('[data-subtab="') && node.getAttribute) {
           const match = sel.match(/\[data-subtab="([^"]+)"\]/);
           if (match && node.getAttribute("data-subtab") === match[1]) {
@@ -98,14 +100,14 @@ describe("Reading OS Cards Grid & Kanban Board Component", () => {
   it("renders highlight cards with quotes and importance tags", () => {
     component.render(DEMO_BOOKS, DEMO_HIGHLIGHTS);
 
-    const cards = container.querySelectorAll(".highlight-card");
+    const cards = container.querySelectorAll(".editorial-highlight-card");
     expect(cards.length).toBe(DEMO_HIGHLIGHTS.length);
   });
 
   it("triggers onSelectHighlight callback when clicking a highlight card", () => {
     component.render(DEMO_BOOKS, DEMO_HIGHLIGHTS);
 
-    const cards = container.querySelectorAll(".highlight-card");
+    const cards = container.querySelectorAll(".editorial-highlight-card");
     cards[0]?.click();
 
     expect(onSelectHlSpy).toHaveBeenCalledWith(DEMO_HIGHLIGHTS[0]);
@@ -129,5 +131,15 @@ describe("Reading OS Cards Grid & Kanban Board Component", () => {
 
     const columns = container.querySelectorAll(".kanban-column");
     expect(columns.length).toBe(3);
+  });
+
+  it("provides quick action buttons for copying and artboard generation", () => {
+    component.render(DEMO_BOOKS, DEMO_HIGHLIGHTS);
+
+    const copyBtns = container.querySelectorAll(".btn-copy-quote");
+    expect(copyBtns.length).toBe(DEMO_HIGHLIGHTS.length);
+
+    const artboardBtns = container.querySelectorAll(".btn-artboard-quote");
+    expect(artboardBtns.length).toBe(DEMO_HIGHLIGHTS.length);
   });
 });

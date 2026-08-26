@@ -7,6 +7,7 @@ export class ReadingCardsComponent {
   private onSelectHighlight?: (highlight: HighlightItem) => void;
   private onSelectBook?: (bookId: string) => void;
   private onUpdateBookStatus?: (bookId: string, status: "reading" | "completed" | "want_to_read") => void;
+  private onOpenQuoteCard?: (highlight: HighlightItem) => void;
 
   constructor(
     container: HTMLElement,
@@ -14,35 +15,37 @@ export class ReadingCardsComponent {
       onSelectHighlight?: (highlight: HighlightItem) => void;
       onSelectBook?: (bookId: string) => void;
       onUpdateBookStatus?: (bookId: string, status: "reading" | "completed" | "want_to_read") => void;
+      onOpenQuoteCard?: (highlight: HighlightItem) => void;
     }
   ) {
     this.container = container;
     this.onSelectHighlight = callbacks?.onSelectHighlight;
     this.onSelectBook = callbacks?.onSelectBook;
     this.onUpdateBookStatus = callbacks?.onUpdateBookStatus;
+    this.onOpenQuoteCard = callbacks?.onOpenQuoteCard;
   }
 
   public render(books: BookItem[], highlights: HighlightItem[]): void {
     this.container.innerHTML = "";
 
-    // 1. Sub-navigation Header
+    // 1. Sub-navigation Header Bar
     const navHeader = document.createElement("div");
     navHeader.className = "cards-nav-header";
 
     const subtabsContainer = document.createElement("div");
     subtabsContainer.className = "cards-subtabs";
 
-    const tabDefs: Array<{ id: "highlights" | "books" | "kanban"; label: string }> = [
-      { id: "highlights", label: `Highlights Grid (${highlights.length})` },
-      { id: "books", label: `Books Shelf (${books.length})` },
-      { id: "kanban", label: "Reading OS Kanban" },
+    const tabDefs: Array<{ id: "highlights" | "books" | "kanban"; label: string; icon: string }> = [
+      { id: "highlights", label: `Highlights (${highlights.length})`, icon: "💬" },
+      { id: "books", label: `Book Shelf (${books.length})`, icon: "📚" },
+      { id: "kanban", label: "Reading OS Kanban", icon: "📊" },
     ];
 
     tabDefs.forEach((tab) => {
       const btn = document.createElement("button");
       btn.className = `subtab-btn ${this.currentTab === tab.id ? "active" : ""}`;
       btn.setAttribute("data-subtab", tab.id);
-      btn.textContent = tab.label;
+      btn.innerHTML = `<span>${tab.icon}</span> <span>${tab.label}</span>`;
       btn.addEventListener("click", () => {
         this.currentTab = tab.id;
         this.render(books, highlights);
@@ -70,39 +73,79 @@ export class ReadingCardsComponent {
 
   private createHighlightsGrid(highlights: HighlightItem[]): HTMLElement {
     const grid = document.createElement("div");
-    grid.className = "highlights-card-grid";
+    grid.className = "highlights-masonry-grid";
 
     if (highlights.length === 0) {
       const empty = document.createElement("div");
-      empty.className = "empty-state-card";
-      empty.innerHTML = "<p>No highlights match the current filters.</p>";
+      empty.className = "empty-state-editorial";
+      empty.innerHTML = `
+        <div class="empty-icon-ring">🔍</div>
+        <h3>No Highlights Found</h3>
+        <p>No annotations match your active search filters or selected book.</p>
+      `;
       grid.appendChild(empty);
       return grid;
     }
 
     highlights.forEach((hl) => {
       const card = document.createElement("article");
-      card.className = `highlight-card color-border-${hl.color}`;
+      card.className = `editorial-highlight-card color-rail-${hl.color}`;
 
-      const colorClass =
-        hl.color === "blue" ? "tag-blue" : hl.color === "pink" ? "tag-pink" : hl.color === "orange" ? "tag-orange" : "tag-yellow";
       const colorLabel =
-        hl.color === "blue" ? "Quote / Fact" : hl.color === "pink" ? "Critical / Action" : hl.color === "orange" ? "Concept / Story" : "Key Insight";
+        hl.color === "blue" ? "Quote / Fact" : hl.color === "pink" ? "Critical / Action" : hl.color === "orange" ? "Thematic / Story" : "Key Insight";
 
       card.innerHTML = `
-        <div class="card-meta-top">
-          <span class="book-title-badge" title="${hl.bookTitle}">📖 ${hl.bookTitle}</span>
-          <span class="loc-pill">${hl.location ? `Loc ${hl.location}` : "Note"}</span>
+        <div class="card-meta-row">
+          <span class="card-book-badge" title="${this.escapeHtml(hl.bookTitle)}">📖 ${this.escapeHtml(hl.bookTitle)}</span>
+          <span class="card-loc-pill">${hl.location ? `Loc ${hl.location}` : "Note"}</span>
         </div>
-        <blockquote class="card-quote-text">“${hl.rawText}”</blockquote>
-        ${hl.sourceNote ? `<div class="card-note-box"><strong>✍️ Note:</strong> ${hl.sourceNote}</div>` : ""}
-        ${hl.interpretation ? `<div class="card-interp-box"><strong>🧠 Reflection:</strong> ${hl.interpretation}</div>` : ""}
-        <div class="card-footer">
-          <span class="${colorClass}">${colorLabel}</span>
-          ${hl.importance ? `<span class="importance-pill imp-${hl.importance.toLowerCase()}">${hl.importance}</span>` : ""}
+
+        <blockquote class="editorial-quote">“${this.escapeHtml(hl.rawText)}”</blockquote>
+
+        ${hl.sourceNote ? `<div class="editorial-note-box"><strong>✍️ Note:</strong> ${this.escapeHtml(hl.sourceNote)}</div>` : ""}
+        ${hl.interpretation ? `<div class="editorial-reflection-box"><strong>🧠 Reflection:</strong> ${this.escapeHtml(hl.interpretation)}</div>` : ""}
+
+        <div class="editorial-card-footer">
+          <div class="card-tag-group">
+            <span class="card-tag-pill tag-${hl.color}">${colorLabel}</span>
+            ${hl.importance ? `<span class="importance-badge imp-${hl.importance.toLowerCase()}">${hl.importance}</span>` : ""}
+          </div>
+
+          <div class="card-quick-actions">
+            <button class="btn-card-action btn-copy-quote" title="Copy Quote Markdown" aria-label="Copy Quote">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+            <button class="btn-card-action btn-artboard-quote" title="Open Social Quote Studio" aria-label="Social Quote Artboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </button>
+          </div>
         </div>
       `;
 
+      // Copy Quote Markdown
+      const btnCopy = card.querySelector(".btn-copy-quote") as HTMLButtonElement | null;
+      btnCopy?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const mdText = `> "${hl.rawText}"\n> — **${hl.bookTitle}** (Loc ${hl.location || 'N/A'})`;
+        navigator.clipboard?.writeText(mdText);
+        btnCopy.innerHTML = `<span style="color:#10b981;font-size:11px;font-weight:700;">✓</span>`;
+        setTimeout(() => {
+          btnCopy.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+        }, 1500);
+      });
+
+      // Social Quote Artboard
+      const btnArtboard = card.querySelector(".btn-artboard-quote") as HTMLButtonElement | null;
+      btnArtboard?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (this.onOpenQuoteCard) {
+          this.onOpenQuoteCard(hl);
+        } else if (this.onSelectHighlight) {
+          this.onSelectHighlight(hl);
+        }
+      });
+
+      // Card Click -> Open Detail Drawer
       card.addEventListener("click", () => {
         if (this.onSelectHighlight) this.onSelectHighlight(hl);
       });
@@ -115,7 +158,7 @@ export class ReadingCardsComponent {
 
   private createBooksGrid(books: BookItem[]): HTMLElement {
     const grid = document.createElement("div");
-    grid.className = "books-card-grid";
+    grid.className = "books-shelf-grid";
 
     books.forEach((book) => {
       const card = document.createElement("article");
@@ -125,13 +168,13 @@ export class ReadingCardsComponent {
           <span class="book-cover-emoji">📖</span>
         </div>
         <div class="book-shelf-details">
-          <h3 class="book-shelf-title">${book.title}</h3>
-          <p class="book-shelf-author">By ${book.author}</p>
+          <h3 class="book-shelf-title">${this.escapeHtml(book.title)}</h3>
+          <p class="book-shelf-author">By ${this.escapeHtml(book.author)}</p>
           <div class="book-shelf-stats">
             <span>💡 <strong>${book.highlightsCount}</strong> Highlights</span>
             <span class="status-pill status-${book.status || 'reading'}">${book.status || 'reading'}</span>
           </div>
-          ${book.tags && book.tags.length > 0 ? `<div class="book-tags-row">${book.tags.map(t => `<span class="book-tag-chip">#${t}</span>`).join(" ")}</div>` : ""}
+          ${book.tags && book.tags.length > 0 ? `<div class="book-tags-row">${book.tags.map(t => `<span class="book-tag-chip">#${this.escapeHtml(t)}</span>`).join(" ")}</div>` : ""}
         </div>
       `;
 
@@ -176,8 +219,8 @@ export class ReadingCardsComponent {
         const item = document.createElement("div");
         item.className = "kanban-book-item";
         item.innerHTML = `
-          <h4 class="kanban-item-title">${book.title}</h4>
-          <p class="kanban-item-author">${book.author}</p>
+          <h4 class="kanban-item-title">${this.escapeHtml(book.title)}</h4>
+          <p class="kanban-item-author">${this.escapeHtml(book.author)}</p>
           <div class="kanban-item-meta">
             <span>💡 ${book.highlightsCount} notes</span>
             <select class="kanban-status-select" aria-label="Change status">
@@ -211,5 +254,9 @@ export class ReadingCardsComponent {
     });
 
     return kanban;
+  }
+
+  private escapeHtml(str: string): string {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 }
