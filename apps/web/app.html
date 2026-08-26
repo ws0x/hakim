@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hakim: Visual Reading Intelligence & Knowledge Graph</title>
+  <link rel="icon" type="image/svg+xml" href="src/assets/logo.svg" />
+  <link rel="stylesheet" href="src/styles/workspace.css" />
+</head>
+<body class="app-body">
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="app-brand">
+      <img src="src/assets/logo.svg" alt="Hakim Logo" class="app-logo" />
+      <span class="app-title">Hakim Intelligence</span>
+      <select id="dataset-select" class="app-dataset-select" aria-label="Select Dataset">
+        <option value="demo">Sample Library (5 Books, 15 Quotes)</option>
+        <option value="custom" disabled>My Imported Library</option>
+      </select>
+    </div>
+
+    <div class="app-view-switcher">
+      <button class="view-btn active" data-view="graph" aria-label="Knowledge Graph View">
+        <svg class="view-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        <span>Knowledge Graph</span>
+      </button>
+      <button class="view-btn" data-view="cards" aria-label="Reading OS Cards View">
+        <svg class="view-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span>Reading Cards</span>
+      </button>
+      <button class="view-btn" data-view="flashcards" aria-label="Active Recall Flashcards">
+        <svg class="view-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+        <span>Active Recall</span>
+      </button>
+    </div>
+
+    <div class="app-actions">
+      <button id="btn-engine-status" class="btn-engine-status offline" title="Hakim Local SQLite Engine Bridge" aria-label="Engine Status">
+        <span class="status-dot"></span>
+        <span class="engine-status-label">Engine Offline</span>
+      </button>
+
+      <input type="file" id="file-upload-input" accept=".txt,.json" style="display: none;" />
+      <button id="btn-upload-file" class="btn-upload">
+        <svg class="view-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        <span>Import File</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace Columns -->
+  <div class="app-workspace">
+    <!-- Left Navigation Sidebar -->
+    <aside class="app-sidebar">
+      <div class="sidebar-search-box">
+        <input type="text" id="search-input" class="search-input" placeholder="Search quotes, books, concepts..." aria-label="Search highlights" />
+        
+        <div class="color-filter-row">
+          <button class="color-dot-btn dot-yellow active" data-color="yellow" title="Key Insights"></button>
+          <button class="color-dot-btn dot-blue active" data-color="blue" title="Quotes & Facts"></button>
+          <button class="color-dot-btn dot-pink active" data-color="pink" title="Critical Action Items"></button>
+          <button class="color-dot-btn dot-orange active" data-color="orange" title="Concepts & Stories"></button>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Books in Library</div>
+        <div id="sidebar-book-list" class="book-list"></div>
+      </div>
+    </aside>
+
+    <!-- Main Interactive Stage -->
+    <main class="app-stage">
+      <!-- 1. Knowledge Graph Container -->
+      <div id="graph-container" class="graph-canvas-container">
+        <!-- Canvas Graph renders here -->
+      </div>
+
+      <!-- 2. Reading Cards / Kanban Container -->
+      <div id="cards-container" class="cards-view-container" style="display: none;">
+        <!-- Cards Grid and Kanban render here -->
+      </div>
+
+      <!-- 3. Active Recall Flashcards Container -->
+      <div id="flashcards-container" class="flashcards-view-container" style="display: none;">
+        <!-- 3D Flashcards render here -->
+      </div>
+
+      <!-- Floating Graph Controls Toolbar -->
+      <div class="graph-toolbar">
+        <button id="btn-graph-zoom-in" class="graph-tool-btn" title="Zoom In" aria-label="Zoom In">
+          <svg class="tool-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+        <button id="btn-graph-zoom-out" class="graph-tool-btn" title="Zoom Out" aria-label="Zoom Out">
+          <svg class="tool-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+        <button id="btn-graph-reset" class="graph-tool-btn" title="Reset View" aria-label="Reset View">
+          <svg class="tool-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+          </svg>
+        </button>
+        <button id="btn-graph-physics" class="graph-tool-btn active" title="Toggle Physics Simulation" aria-label="Toggle Physics">
+          <svg class="tool-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- HUD Stats Overlay -->
+      <div class="graph-stats-hud">
+        <span>Nodes: <strong id="hud-nodes-count">0</strong></span>
+        <span>Connections: <strong id="hud-links-count">0</strong></span>
+        <span>Filtered Highlights: <strong id="hud-filtered-count">0</strong></span>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="src/scripts/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hakim: Kindle Reading Intelligence & Notion Synchronizer</title>
+  <meta name="description" content="Autonomous, local-first Kindle highlight intelligence system. Sync your entire Kindle library into Notion and an interactive knowledge graph. Zero CLI required." />
+  <link rel="icon" type="image/svg+xml" href="src/assets/logo.svg" />
+  <link rel="stylesheet" href="src/styles/landing.css" />
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="#" class="brand-link">
+        <img src="src/assets/logo.svg" alt="Hakim Logo" class="nav-logo" />
+        <span class="brand-title">Hakim</span>
+        <span class="version-pill">v1.2.1</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Main Navigation">
+        <a href="#features" class="nav-item">Features</a>
+        <a href="#installation" class="nav-item">Install Guide</a>
+        <a href="#comparison" class="nav-item">Readwise vs Hakim</a>
+        <a href="app.html" class="nav-item nav-highlight">✨ Launch Web App</a>
+        <a href="https://github.com/ws0x/hakim" target="_blank" rel="noreferrer" class="nav-item nav-github">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="app.html" class="btn btn-nav">Open Web App</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-container">
+      <div class="badge-row">
+        <span class="hero-badge">
+          <span class="badge-dot"></span>
+          <span>Open Source • Local-First • Zero Subscriptions</span>
+        </span>
+      </div>
+
+      <h1 class="hero-title">
+        Your Kindle highlights, <br />
+        <span class="gradient-text">effortlessly organized in Notion</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        An autonomous, privacy-first personal reading intelligence system. Automatically sync your entire Kindle notebook into a two-way linked Notion Reading OS in seconds without subscriptions, Node servers, or CLI tools.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="app.html" class="btn btn-primary btn-lg">
+          <svg class="cta-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+          <span>Launch Web Client & Graph</span>
+        </a>
+        <a href="#installation" class="btn btn-secondary btn-lg">
+          <svg class="cta-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          <span>Download Extension (v1.3.0)</span>
+        </a>
+      </div>
+
+      <!-- Live Interactive Demo Mockup -->
+      <div id="simulation" class="mockup-showcase">
+        <div class="mockup-window">
+          <div class="window-header">
+            <div class="window-controls">
+              <span class="ctrl ctrl-red"></span>
+              <span class="ctrl ctrl-yellow"></span>
+              <span class="ctrl ctrl-green"></span>
+            </div>
+            <div class="window-title">Hakim Live Synchronizer Simulation</div>
+            <div class="window-status-pill">
+              <span class="pulse-dot"></span>
+              <span>Notion Connected</span>
+            </div>
+          </div>
+
+          <div class="window-body">
+            <div class="mockup-grid">
+              <!-- Left: Extension View -->
+              <div class="mockup-panel extension-panel">
+                <div class="panel-header">
+                  <img src="src/assets/logo.svg" alt="Hakim Logo" class="panel-logo" />
+                  <div>
+                    <h3 class="panel-name">Hakim Extension</h3>
+                    <p class="panel-sub">read.amazon.com ➔ api.notion.com</p>
+                  </div>
+                </div>
+
+                <div class="sim-card">
+                  <div class="sim-row">
+                    <span>Kindle Account:</span>
+                    <span class="status-green">✓ Active Session</span>
+                  </div>
+                  <div class="sim-row">
+                    <span>Notion Database:</span>
+                    <span class="status-green">✓ Two-Way Synced</span>
+                  </div>
+                  <div class="sim-row">
+                    <span>Auto-Sync:</span>
+                    <span class="status-purple">Every 6 Hours</span>
+                  </div>
+                </div>
+
+                <div class="sim-progress-box">
+                  <div class="sim-progress-label">
+                    <span id="sim-book-label">Syncing: "Atomic Habits" (18 highlights)...</span>
+                    <span id="sim-percent">78%</span>
+                  </div>
+                  <div class="sim-track">
+                    <div id="sim-bar" class="sim-fill" style="width: 78%;"></div>
+                  </div>
+                </div>
+
+                <button id="btn-run-sim" class="btn btn-sim">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                  </svg>
+                  <span>Re-run Simulation</span>
+                </button>
+              </div>
+
+              <!-- Right: Notion Database Stream -->
+              <div class="mockup-panel notion-panel">
+                <div class="notion-header">
+                  <span class="notion-icon">📖</span>
+                  <span class="notion-title">Hakim: Highlights Database</span>
+                  <span class="notion-badge">142 synced</span>
+                </div>
+
+                <div class="notion-table">
+                  <div class="notion-row header-row">
+                    <span class="col-title">Highlight Title</span>
+                    <span class="col-book">Book Relation</span>
+                    <span class="col-color">Color / Meaning</span>
+                    <span class="col-loc">Location</span>
+                  </div>
+                  <div class="notion-row">
+                    <span class="col-title">💡 Loc 120 — "You do not rise to the level..."</span>
+                    <span class="col-book"><span class="book-tag">📖 Atomic Habits</span></span>
+                    <span class="col-color"><span class="tag-yellow">Yellow (Key Insight)</span></span>
+                    <span class="col-loc">120</span>
+                  </div>
+                  <div class="notion-row">
+                    <span class="col-title">💡 Loc 340 — "Systems are more important..."</span>
+                    <span class="col-book"><span class="book-tag">📖 Atomic Habits</span></span>
+                    <span class="col-color"><span class="tag-blue">Blue (Quote / Fact)</span></span>
+                    <span class="col-loc">340</span>
+                  </div>
+                  <div class="notion-row">
+                    <span class="col-title">💡 Loc 89 — "Reliability means continuing to work..."</span>
+                    <span class="col-book"><span class="book-tag">📖 Designing Data-Intensive Apps</span></span>
+                    <span class="col-color"><span class="tag-pink">Pink (Critical / Action)</span></span>
+                    <span class="col-loc">89</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key Features Grid -->
+  <section id="features" class="features-section">
+    <div class="section-container">
+      <div class="section-header">
+        <h2 class="section-title">Built for Serious Readers & Thinkers</h2>
+        <p class="section-subtitle">Everything you need to turn raw highlights into lifelong personal intelligence.</p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          </div>
+          <h3 class="feature-heading">Autonomous Background Sync</h3>
+          <p class="feature-desc">Runs silently in the background every 6 hours and upon opening Chrome. Highlights taken on your Kindle e-reader are waiting in Notion before you even open your computer.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </div>
+          <h3 class="feature-heading">Two-Way Synced Reading OS</h3>
+          <p class="feature-desc">Establishes true reciprocal backlinks between your Books database and Highlights database. Open any book in Notion to see all of its quotes automatically displayed.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </div>
+          <h3 class="feature-heading">Custom 12+ Field Mapping</h3>
+          <p class="feature-desc">Already have a personal Notion database schema? Map custom column names for titles, authors, quotes, user notes, chapters, locations, and personal interpretations.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3 class="feature-heading">100% Private & Local-First</h3>
+          <p class="feature-desc">Zero cloud intermediaries. Your Amazon cookies never leave your browser context, and your reading highlights stream directly between Kindle Cloud and Notion API.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <h3 class="feature-heading">2-Second Cached Checkpointing</h3>
+          <p class="feature-desc">Intelligent incremental sync skips unchanged books and pagination, turning repeated syncs from minutes into a lightning-fast 2-second background check.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          </div>
+          <h3 class="feature-heading">Semantic Color Taxonomy</h3>
+          <p class="feature-desc">Transform raw yellow and pink colors into an active knowledge management ontology: Key Insights, Quotes & Facts, Critical Action Items, and Memorable Concepts.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive 3-Step Installation Guide -->
+  <section id="installation" class="install-section">
+    <div class="section-container">
+      <div class="section-header">
+        <h2 class="section-title">Install in 60 Seconds</h2>
+        <p class="section-subtitle">Zero CLI, zero terminal commands, zero subscriptions.</p>
+      </div>
+
+      <div class="install-tabs">
+        <button class="tab-btn active" data-tab="tab-crx">Chrome / Brave / Edge (.zip)</button>
+        <button class="tab-btn" data-tab="tab-source">From GitHub Source</button>
+      </div>
+
+      <div id="tab-crx" class="tab-content active">
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <h4 class="step-title">Download Extension Bundle</h4>
+            <p class="step-desc">Download the latest pre-built extension release package (.zip) from GitHub.</p>
+            <a href="https://github.com/hakim-reading/hakim/releases/latest" target="_blank" rel="noreferrer" class="btn btn-download-pkg">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              <span>Download hakim-v1.2.1.zip</span>
+            </a>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <h4 class="step-title">Load Unpacked in Chrome</h4>
+            <p class="step-desc">Unzip the folder, open <code>chrome://extensions</code> in your browser, toggle <strong>Developer Mode</strong> (top-right), and click <strong>Load unpacked</strong> selecting the <code>apps/extension</code> folder.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <h4 class="step-title">Connect Notion & Sync</h4>
+            <p class="step-desc">Click the Hakim icon in your toolbar, paste your Notion Secret and Page URL, then click <strong>Sync</strong>. Hakim auto-provisions your Notion databases and handles background syncs!</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-source" class="tab-content">
+        <div class="code-terminal">
+          <div class="terminal-header">
+            <span>Terminal (Developer Setup)</span>
+            <button class="btn-copy-code" id="btn-copy-code">Copy All</button>
+          </div>
+          <pre class="terminal-code"><code># 1. Clone the repository
+git clone https://github.com/hakim-reading/hakim.git
+cd hakim
+
+# 2. Install dependencies & build extension
+pnpm install
+pnpm build
+
+# 3. Load in browser
+# Open chrome://extensions -> Load Unpacked -> Select /apps/extension/dist</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Readwise vs Hakim Comparison -->
+  <section id="comparison" class="comparison-section">
+    <div class="section-container">
+      <div class="section-header">
+        <h2 class="section-title">Hakim vs. Readwise</h2>
+        <p class="section-subtitle">Why readers are switching to a privacy-first, local-first architecture.</p>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature Dimension</th>
+              <th class="col-hakim">Hakim (حَكِيم)</th>
+              <th class="col-other">Readwise</th>
+              <th class="col-other">Manual Copy-Paste</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Price</strong></td>
+              <td class="col-hakim highlight-green">100% Free & Open Source</td>
+              <td class="col-other">$100 / year recurring</td>
+              <td class="col-other">Free</td>
+            </tr>
+            <tr>
+              <td><strong>Data Privacy</strong></td>
+              <td class="col-hakim highlight-green">Local-first (Direct Browser to Notion)</td>
+              <td class="col-other">Third-party cloud storage</td>
+              <td class="col-other">Manual</td>
+            </tr>
+            <tr>
+              <td><strong>Background Auto-Sync</strong></td>
+              <td class="col-hakim highlight-green">✓ Continuous (Every 6h / on startup)</td>
+              <td class="col-other">✓ Daily</td>
+              <td class="col-other">✗ None</td>
+            </tr>
+            <tr>
+              <td><strong>Two-Way Notion Relations</strong></td>
+              <td class="col-hakim highlight-green">✓ Reciprocal Books ⇄ Highlights</td>
+              <td class="col-other">✗ One-way flat pages</td>
+              <td class="col-other">✗ None</td>
+            </tr>
+            <tr>
+              <td><strong>Custom 12+ Field Mapping</strong></td>
+              <td class="col-hakim highlight-green">✓ Full column-level mapping</td>
+              <td class="col-other">✗ Rigid pre-set schemas</td>
+              <td class="col-other">Manual setup</td>
+            </tr>
+            <tr>
+              <td><strong>Smart Checkpointing</strong></td>
+              <td class="col-hakim highlight-green">✓ 2-second cached re-sync</td>
+              <td class="col-other">Standard</td>
+              <td class="col-other">✗ None</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <img src="src/assets/logo.svg" alt="Hakim Logo" class="footer-logo" />
+        <span class="footer-title">Hakim</span>
+        <p class="footer-tagline">Local-first personal reading intelligence system.</p>
+      </div>
+
+      <div class="footer-meta">
+        <p>Released under the MIT License • Built for lifelong readers.</p>
+        <p>© 2026 Hakim Project. All reading data remains 100% your own.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="src/scripts/landing.js"></script>
+</body>
+</html>

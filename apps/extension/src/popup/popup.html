@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hakim: Kindle Reading Intelligence</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Brand Header -->
+    <header class="header">
+      <div class="logo-title">
+        <img src="../assets/logo.svg" alt="Hakim Logo" class="brand-logo" id="brand-logo" />
+        <div>
+          <div class="brand-title-row">
+            <h1 class="brand-name">Hakim</h1>
+            <span class="version-badge" id="app-version">v1.1.0</span>
+          </div>
+          <p class="subtitle">Kindle to Notion Intelligence</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Live Status Card -->
+    <main>
+      <section class="card status-card" aria-label="System Status">
+        <div class="status-row">
+          <span class="status-label">Amazon Kindle:</span>
+          <div class="status-value">
+            <span class="status-dot dot-offline" id="amazon-dot"></span>
+            <span id="amazon-status" class="status-text">Checking...</span>
+          </div>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Notion Target:</span>
+          <div class="status-value">
+            <span class="status-dot dot-offline" id="notion-dot"></span>
+            <span id="notion-status" class="status-text">Not Connected</span>
+          </div>
+        </div>
+        <div class="status-row divider">
+          <span class="status-label">Last Synced:</span>
+          <span id="last-sync" class="timestamp" title="Never synced">Never</span>
+        </div>
+      </section>
+
+      <!-- Live Progress Bar (Shown during sync) -->
+      <div id="sync-progress-card" class="card progress-card" style="display: none;">
+        <div class="progress-header">
+          <span id="progress-book-label" class="progress-book-label">Connecting...</span>
+          <span id="progress-percent" class="progress-percent">0%</span>
+        </div>
+        <div class="progress-track">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="actions">
+        <button id="btn-sync" class="btn btn-primary" disabled>
+          <svg class="btn-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          <span id="btn-sync-text">Sync Highlights to Notion</span>
+        </button>
+      </div>
+
+      <!-- Toast Notification Banner -->
+      <div id="toast-banner" class="toast-banner" style="display: none;" role="alert">
+        <span id="toast-text" class="toast-text"></span>
+        <button id="toast-close" class="toast-close" aria-label="Close notification">&times;</button>
+      </div>
+
+      <!-- Collapsible Settings Accordion -->
+      <section class="settings-accordion">
+        <button id="accordion-toggle" class="accordion-toggle" aria-expanded="false" aria-controls="settings-panel">
+          <span class="accordion-title">
+            <svg class="section-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span>Notion Setup & Configuration</span>
+          </span>
+          <span id="accordion-chevron" class="accordion-chevron">▼</span>
+        </button>
+
+        <div id="settings-panel" class="settings-panel" style="display: none;">
+          <!-- 3-Step Setup Guidance -->
+          <div class="setup-guide">
+            <div class="guide-title">
+              <svg class="info-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <span>How to Connect Notion:</span>
+            </div>
+            <ol class="guide-steps">
+              <li>Create integration at <a href="https://www.notion.so/profile/integrations" target="_blank" rel="noreferrer" class="guide-link">notion.so/integrations</a> and copy Secret.</li>
+              <li>In Notion, open your page, click <strong>···</strong> (top-right) ➔ <strong>Connect to</strong> ➔ select <strong>Hakim</strong>.</li>
+              <li>Paste Secret and Page URL below, then click <strong>Sync</strong>!</li>
+            </ol>
+          </div>
+
+          <!-- Configuration Form (Inline on same line) -->
+          <div class="form-row">
+            <label for="notion-token" class="form-label">Notion Secret:</label>
+            <div class="input-password-wrapper">
+              <input type="password" id="notion-token" placeholder="secret_xxxxxxxx..." autocomplete="off" />
+              <button type="button" id="btn-toggle-token-visibility" class="btn-peek" title="Toggle visibility" aria-label="Toggle token visibility">
+                <svg id="icon-eye" class="peek-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg id="icon-eye-off" class="peek-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="notion-parent-id" class="form-label">Page URL / ID:</label>
+            <input type="text" id="notion-parent-id" placeholder="https://notion.so/My-Page..." />
+          </div>
+
+          <div class="form-row">
+            <label for="amazon-domain" class="form-label">Amazon Region:</label>
+            <select id="amazon-domain">
+              <option value="read.amazon.com">read.amazon.com (US / Global)</option>
+              <option value="read.amazon.co.uk">read.amazon.co.uk (UK)</option>
+              <option value="read.amazon.de">read.amazon.de (Germany)</option>
+              <option value="read.amazon.co.jp">read.amazon.co.jp (Japan)</option>
+              <option value="read.amazon.ca">read.amazon.ca (Canada)</option>
+              <option value="read.amazon.com.au">read.amazon.com.au (Australia)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="auto-sync-interval" class="form-label">Auto-Sync:</label>
+            <select id="auto-sync-interval">
+              <option value="360">Every 6 Hours (Recommended)</option>
+              <option value="720">Every 12 Hours</option>
+              <option value="1440">Every 24 Hours</option>
+              <option value="60">Every 1 Hour</option>
+              <option value="0">Disabled (Manual Only)</option>
+            </select>
+          </div>
+
+          <!-- Comprehensive Custom Field Mapping Sub-Accordion -->
+          <div class="mapping-section">
+            <button type="button" id="mapping-toggle" class="mapping-toggle" aria-expanded="false">
+              <span class="mapping-toggle-title">
+                <svg class="map-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                </svg>
+                <span>Custom Notion Field Mapping (12+ Fields)</span>
+              </span>
+              <span id="mapping-chevron" class="accordion-chevron">▼</span>
+            </button>
+
+            <div id="mapping-panel" class="mapping-panel" style="display: none;">
+              <div class="mapping-group-title">Books Database Fields:</div>
+              <div class="form-row">
+                <label for="map-book-title" class="form-label">Book Title:</label>
+                <input type="text" id="map-book-title" placeholder="Title" />
+              </div>
+              <div class="form-row">
+                <label for="map-book-author" class="form-label">Author:</label>
+                <input type="text" id="map-book-author" placeholder="Author" />
+              </div>
+              <div class="form-row">
+                <label for="map-book-asin" class="form-label">ASIN / ID:</label>
+                <input type="text" id="map-book-asin" placeholder="ASIN" />
+              </div>
+              <div class="form-row">
+                <label for="map-book-url" class="form-label">Kindle URL:</label>
+                <input type="text" id="map-book-url" placeholder="Kindle URL" />
+              </div>
+              <div class="form-row">
+                <label for="map-book-last-annotated" class="form-label">Last Annotated:</label>
+                <input type="text" id="map-book-last-annotated" placeholder="Last Annotated" />
+              </div>
+
+              <div class="mapping-group-title" style="margin-top: 8px;">Highlights Database Fields:</div>
+              <div class="form-row">
+                <label for="map-highlight-title" class="form-label">Highlight Title:</label>
+                <input type="text" id="map-highlight-title" placeholder="Name" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-relation" class="form-label">Book Relation:</label>
+                <input type="text" id="map-highlight-relation" placeholder="Book" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-quote" class="form-label">Quote Text:</label>
+                <input type="text" id="map-highlight-quote" placeholder="Quote" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-note" class="form-label">Kindle Note:</label>
+                <input type="text" id="map-highlight-note" placeholder="Kindle Note" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-loc" class="form-label">Location:</label>
+                <input type="text" id="map-highlight-loc" placeholder="Location" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-page" class="form-label">Page Number:</label>
+                <input type="text" id="map-highlight-page" placeholder="Page" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-chapter" class="form-label">Chapter:</label>
+                <input type="text" id="map-highlight-chapter" placeholder="Chapter" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-color" class="form-label">Color:</label>
+                <input type="text" id="map-highlight-color" placeholder="Color" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-importance" class="form-label">Importance:</label>
+                <input type="text" id="map-highlight-importance" placeholder="Importance" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-status" class="form-label">Process Status:</label>
+                <input type="text" id="map-highlight-status" placeholder="Process Status" />
+              </div>
+              <div class="form-row">
+                <label for="map-highlight-interp" class="form-label">Interpretation:</label>
+                <input type="text" id="map-highlight-interp" placeholder="My Interpretation" />
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-save-config" class="btn btn-save">
+            <span>Save Configuration</span>
+          </button>
+
+          <div style="margin-top: 10px; text-align: center;">
+            <button type="button" id="btn-reset-cache" class="btn btn-peek" style="color: #94a3b8; font-size: 11px; text-decoration: underline; background: transparent; border: none; cursor: pointer;">
+              Reset Saved Database IDs & Cache
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

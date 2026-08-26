@@ -1,0 +1,37 @@
+# Node & Build
+node_modules/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# SQLite Database Files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Diagnostics & Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# OS & Editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
