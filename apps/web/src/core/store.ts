@@ -113,6 +113,14 @@ export class ReadingStateStore {
     }
   }
 
+  public updateHighlightInterpretation(highlightId: string, interpretation: string): void {
+    const hl = this.state.highlights.find((h) => h.id === highlightId);
+    if (hl) {
+      hl.interpretation = interpretation;
+      this.notify();
+    }
+  }
+
   public loadDemoData(): void {
     this.state.books = DEMO_BOOKS;
     this.state.highlights = DEMO_HIGHLIGHTS;
