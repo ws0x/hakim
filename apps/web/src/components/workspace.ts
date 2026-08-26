@@ -5,6 +5,7 @@ import { ReadingCardsComponent } from "./reading-cards.js";
 import { SlideoverDrawer } from "./slideover-drawer.js";
 import { ActiveRecallComponent } from "./active-recall.js";
 import { EngineBridgeModal } from "./engine-bridge-modal.js";
+import { AISynthesisModal } from "./ai-synthesis-modal.js";
 import type { AnnotationColor, GraphNode } from "../core/types.js";
 
 export class WorkspaceController {
@@ -14,6 +15,7 @@ export class WorkspaceController {
   private flashcardsComponent: ActiveRecallComponent | null = null;
   private slideover: SlideoverDrawer | null = null;
   private engineBridge: EngineBridgeModal | null = null;
+  private aiModal: AISynthesisModal | null = null;
 
   constructor() {
     this.store = ReadingStateStore.getInstance();
@@ -51,7 +53,14 @@ export class WorkspaceController {
     // 5. Initialize Local SQLite Engine Bridge Modal
     this.engineBridge = new EngineBridgeModal("btn-engine-status");
 
-    // 6. Subscribe to Store State Changes
+    // 6. Initialize AI Synthesis Modal
+    this.aiModal = new AISynthesisModal();
+    const btnAi = document.getElementById("btn-ai-synthesis");
+    if (btnAi) {
+      btnAi.addEventListener("click", () => this.aiModal?.open());
+    }
+
+    // 7. Subscribe to Store State Changes
     this.store.subscribe((state) => this.render(state));
 
     // 6. Setup Search Input Listener
