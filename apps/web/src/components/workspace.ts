@@ -156,6 +156,9 @@ export class WorkspaceController {
         if (file.name.endsWith(".json")) {
           const parsed = FileImportAdapter.parseJsonSnapshot(text);
           this.store.loadCustomData(parsed.books, parsed.highlights, "custom_file");
+        } else if (file.name.endsWith(".csv")) {
+          const parsed = FileImportAdapter.parseReadwiseCsv(text);
+          this.store.loadCustomData(parsed.books, parsed.highlights, "custom_file");
         } else {
           const parsed = FileImportAdapter.parseMyClippings(text);
           this.store.loadCustomData(parsed.books, parsed.highlights, "custom_file");

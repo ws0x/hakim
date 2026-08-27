@@ -1,5 +1,6 @@
 import type { BookItem, HighlightItem, AnnotationColor } from "../types.js";
 import { normalizeTitle, normalizeAuthor, normalizeText } from "@hakim/domain";
+import { ReadwiseCsvParser } from "@hakim/kindle-import";
 
 export class FileImportAdapter {
   /**
@@ -78,6 +79,46 @@ export class FileImportAdapter {
 
     return {
       books: Array.from(booksMap.values()),
+      highlights,
+    };
+  }
+
+  /**
+   * Parses Readwise CSV export content directly in the browser.
+   */
+  public static parseReadwiseCsv(csvContent: string): { books: BookItem[]; highlights: HighlightItem[] } {
+    const envelope = ReadwiseCsvParser.parse(csvContent);
+    const books: BookItem[] = [];
+    const highlights: HighlightItem[] = [];
+
+    envelope.books.forEach((b, i) => {
+      const bookId = `book-csv-${i + 1}`;
+      const bookItem: BookItem = {
+        id: bookId,
+        title: b.sourceTitle,
+        author: b.author,
+        highlightsCount: b.annotations.length,
+        status: "reading",
+      };
+      books.push(bookItem);
+
+      b.annotations.forEach((a, j) => {
+        highlights.push({
+          id: `hl-csv-${i + 1}-${j + 1}`,
+          bookId: bookItem.id,
+          bookTitle: bookItem.title,
+          rawText: a.rawText,
+          sourceNote: a.sourceNote,
+          location: a.locationStart,
+          color: (a.color as AnnotationColor) || "yellow",
+          importance: a.color === "pink" ? "High" : a.color === "yellow" ? "Essential" : "Medium",
+          status: "Inbox",
+        });
+      });
+    });
+
+    return {
+      books,
       highlights,
     };
   }

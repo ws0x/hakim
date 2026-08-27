@@ -60,6 +60,9 @@ importers:
       '@hakim/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@hakim/notion-sync':
+        specifier: workspace:*
+        version: link:../../packages/notion-sync
     devDependencies:
       '@hakim/test-fixtures':
         specifier: workspace:*
@@ -79,6 +82,9 @@ importers:
       '@hakim/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@hakim/kindle-import':
+        specifier: workspace:*
+        version: link:../../packages/kindle-import
     devDependencies:
       esbuild:
         specifier: ^0.25.0
@@ -156,9 +162,9 @@ importers:
       '@hakim/domain':
         specifier: workspace:*
         version: link:../domain
-      '@notionhq/client':
-        specifier: ^2.2.15
-        version: 2.3.0
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
     devDependencies:
       '@hakim/test-fixtures':
         specifier: workspace:*

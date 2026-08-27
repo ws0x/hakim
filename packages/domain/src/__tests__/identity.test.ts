@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   generateBookId,
   generateAnnotationId,
+  generateAnnotationIdentityV2,
   normalizeTitle,
   normalizeAuthor,
   normalizeText,
@@ -108,5 +109,52 @@ describe("Domain Normalization & Identity Engine", () => {
       const result = ImportEnvelopeSchema.safeParse(invalid);
       expect(result.success).toBe(false);
     });
+  });
+});
+
+describe("Annotation Identity V2", () => {
+  it("keeps identity stable when text or the range end changes at the same location", () => {
+    const original = generateAnnotationIdentityV2({
+      bookId: "11111111-1111-4111-8111-111111111111",
+      type: "highlight",
+      locationStart: 120,
+      rawText: "A short highlight.",
+    });
+    const expanded = generateAnnotationIdentityV2({
+      bookId: "11111111-1111-4111-8111-111111111111",
+      type: "highlight",
+      locationStart: 120,
+      rawText: "A short highlight that was expanded later.",
+    });
+
+    expect(expanded.id).toBe(original.id);
+    expect(original.strategy).toBe("location_anchor");
+  });
+
+  it("keeps duplicate text at different locations distinct", () => {
+    const first = generateAnnotationIdentityV2({
+      bookId: "11111111-1111-4111-8111-111111111111",
+      locationStart: 120,
+      rawText: "Repeated quote",
+    });
+    const second = generateAnnotationIdentityV2({
+      bookId: "11111111-1111-4111-8111-111111111111",
+      locationStart: 220,
+      rawText: "Repeated quote",
+    });
+
+    expect(second.id).not.toBe(first.id);
+  });
+
+  it("prefers a provider annotation key", () => {
+    const identity = generateAnnotationIdentityV2({
+      bookId: "11111111-1111-4111-8111-111111111111",
+      sourceAnnotationKey: "amzn:annotation:42",
+      locationStart: 120,
+      rawText: "Text can change",
+    });
+
+    expect(identity.strategy).toBe("source_key");
+    expect(identity.stableKey).toContain("amzn:annotation:42");
   });
 });

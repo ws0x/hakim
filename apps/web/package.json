@@ -10,7 +10,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hakim/domain": "workspace:*"
+    "@hakim/domain": "workspace:*",
+    "@hakim/kindle-import": "workspace:*"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

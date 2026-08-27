@@ -83,4 +83,19 @@ describe("Hakim Browser Extension - Amazon Client", () => {
     const signinHtml = "<html><body><form action='https://amazon.com/ap/signin'>Sign In</form></body></html>";
     expect(() => client.parseNotebookHtml(signinHtml)).toThrow(SessionExpiredError);
   });
+
+  it("preserves decoded source punctuation and spacing in raw highlight text", () => {
+    const html = `
+      <h3 class="kcp-notebook-title">Arabic and English</h3>
+      <p class="kcp-notebook-author">Example Author</p>
+      <div id="kp-notebook-annotations">
+        <div class="kp-notebook-row-separator kp-notebook-highlight-yellow">
+          <span id="annotationHighlightHeader">Highlight | Location 10</span>
+          <span id="highlight">“Exact”  spacing &amp; punctuation — محفوظة</span>
+        </div>
+      </div>`;
+
+    const parsed = client.parseNotebookHtml(html, "B001RAW001");
+    expect(parsed.annotations[0]?.rawText).toBe("“Exact”  spacing & punctuation — محفوظة");
+  });
 });

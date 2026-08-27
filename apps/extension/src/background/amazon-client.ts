@@ -1,5 +1,5 @@
 import type { RawImportBook, RawImportAnnotation, AnnotationColor, ContentLimitState } from "@hakim/domain";
-import { normalizeTitle, normalizeAuthor, normalizeText, decodeHtmlEntities } from "@hakim/domain";
+import { normalizeTitle, normalizeAuthor, decodeHtmlEntities } from "@hakim/domain";
 
 export class SessionExpiredError extends Error {
   constructor(message = "Amazon session expired. Please log in to read.amazon.com") {
@@ -26,6 +26,13 @@ export interface SyncCacheMap {
     annotationsCount: number;
     lastSyncedAt: string;
   };
+}
+
+export interface AmazonHighlightsPage {
+  book: RawImportBook;
+  nextToken?: string;
+  nextPageStart?: string;
+  terminal: boolean;
 }
 
 export class AmazonNotebookClient {
@@ -72,6 +79,69 @@ export class AmazonNotebookClient {
       if (err instanceof CaptchaDetectedError) throw err;
       return { loggedIn: false, error: err instanceof Error ? err.message : "Network error" };
     }
+  }
+
+  public async fetchLibraryIndex(): Promise<AmazonBookListItem[]> {
+    const response = await fetch(`${this.getBaseUrl()}/notebook`, {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+    });
+    const html = await response.text();
+    this.assertUsableAmazonResponse(html, response);
+    return this.extractLibraryBookList(html);
+  }
+
+  public async fetchHighlightsPage(params: {
+    asin: string;
+    title: string;
+    author: string;
+    token?: string;
+    nextPageStart?: string;
+  }): Promise<AmazonHighlightsPage> {
+    const url = new URL(`${this.getBaseUrl()}/notebook`);
+    url.searchParams.set("asin", params.asin);
+    url.searchParams.set("contentLimitState", "");
+    if (params.token) url.searchParams.set("token", params.token);
+    if (params.nextPageStart) url.searchParams.set("nextPageStart", params.nextPageStart);
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Referer: `${this.getBaseUrl()}/notebook`,
+      },
+    });
+    const html = await response.text();
+    this.assertUsableAmazonResponse(html, response);
+    const book = this.parseNotebookHtml(html, params.asin, params.title, params.author);
+    const tokenMatch = html.match(/id="kp-notebook-annotations-token"[^>]*value="([^"]+)"/i)
+      ?? html.match(/name="token"[^>]*value="([^"]+)"/i)
+      ?? html.match(/class="[^"]*kp-notebook-annotations-token[^"]*"[^>]*value="([^"]+)"/i);
+    const nextStartMatch = html.match(/id="kp-notebook-annotations-next-page-start"[^>]*value="([^"]+)"/i)
+      ?? html.match(/name="nextPageStart"[^>]*value="([^"]+)"/i)
+      ?? html.match(/class="[^"]*kp-notebook-annotations-next-page-start[^"]*"[^>]*value="([^"]+)"/i);
+    const nextToken = tokenMatch?.[1]?.trim();
+    const nextPageStart = nextStartMatch?.[1]?.trim();
+    const repeatedCursor = nextToken === params.token && nextPageStart === params.nextPageStart;
+    return {
+      book,
+      nextToken,
+      nextPageStart,
+      terminal: repeatedCursor || (!nextToken && !nextPageStart),
+    };
+  }
+
+  private assertUsableAmazonResponse(html: string, response: Response): void {
+    if (html.includes("Enter the characters you see below") || html.includes("validateCaptcha")) {
+      throw new CaptchaDetectedError();
+    }
+    if (response.redirected && (response.url.includes("signin") || response.url.includes("ap/signin"))) {
+      throw new SessionExpiredError();
+    }
+    if (html.includes("ap/signin") || html.includes("Sign In")) throw new SessionExpiredError();
+    if (!response.ok) throw new Error(`Amazon Kindle returned HTTP ${response.status}`);
   }
 
   /**
@@ -158,15 +228,19 @@ export class AmazonNotebookClient {
     const rowBlocks = annotationsHtml.split(/(?=<div[^>]*class="[^"]*kp-notebook-row-separator)/i).slice(1);
 
     for (const block of rowBlocks) {
-      // Highlight Text (HTML entities decoded automatically via normalizeText)
+      // Preserve decoded human-visible source text. Matching uses normalizedText separately.
       const textMatch = block.match(/<span[^>]*id="highlight"[^>]*>([\s\S]*?)<\/span>/i);
-      const rawText = textMatch && textMatch[1] ? textMatch[1].replace(/<[^>]*>/g, "").trim() : "";
+      const rawText = textMatch && textMatch[1]
+        ? decodeHtmlEntities(textMatch[1].replace(/<[^>]*>/g, ""))
+        : "";
 
       if (!rawText) continue;
 
       // Note Text
       const noteMatch = block.match(/<span[^>]*id="note"[^>]*>([\s\S]*?)<\/span>/i);
-      const sourceNote = noteMatch && noteMatch[1] ? noteMatch[1].replace(/<[^>]*>/g, "").trim() : undefined;
+      const sourceNote = noteMatch && noteMatch[1]
+        ? decodeHtmlEntities(noteMatch[1].replace(/<[^>]*>/g, ""))
+        : undefined;
 
       // Color
       let color: AnnotationColor = "yellow";
@@ -191,8 +265,8 @@ export class AmazonNotebookClient {
 
       annotations.push({
         type: "highlight",
-        rawText: normalizeText(rawText),
-        sourceNote: sourceNote ? normalizeText(sourceNote) : undefined,
+        rawText,
+        sourceNote,
         locationStart,
         locationEnd: locationStart,
         color,
@@ -222,21 +296,8 @@ export class AmazonNotebookClient {
     const maxPages = 60; // Up to 1500+ highlights
 
     while (page <= maxPages) {
-      let url = `${this.getBaseUrl()}/notebook?asin=${asin}&contentLimitState=`;
-      if (token) url += `&token=${encodeURIComponent(token)}`;
-      if (nextPageStart) url += `&nextPageStart=${encodeURIComponent(nextPageStart)}`;
-
-      const res = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          Referer: `${this.getBaseUrl()}/notebook`,
-        },
-      });
-
-      const html = await res.text();
-      const parsed = this.parseNotebookHtml(html, asin, title, author);
+      const result = await this.fetchHighlightsPage({ asin, title, author, token, nextPageStart });
+      const parsed = result.book;
 
       for (const a of parsed.annotations) {
         const key = `${a.locationStart || 0}:${a.rawText.substring(0, 60)}`;
@@ -246,23 +307,9 @@ export class AmazonNotebookClient {
         }
       }
 
-      // Look for pagination tokens in response HTML
-      const tokenMatch = html.match(/id="kp-notebook-annotations-token"[^>]*value="([^"]+)"/i) ||
-        html.match(/name="token"[^>]*value="([^"]+)"/i) ||
-        html.match(/class="[^"]*kp-notebook-annotations-token[^"]*"[^>]*value="([^"]+)"/i);
-      const nextStartMatch = html.match(/id="kp-notebook-annotations-next-page-start"[^>]*value="([^"]+)"/i) ||
-        html.match(/name="nextPageStart"[^>]*value="([^"]+)"/i) ||
-        html.match(/class="[^"]*kp-notebook-annotations-next-page-start[^"]*"[^>]*value="([^"]+)"/i);
-
-      const nextToken = tokenMatch && tokenMatch[1] ? tokenMatch[1].trim() : undefined;
-      const nextStart = nextStartMatch && nextStartMatch[1] ? nextStartMatch[1].trim() : undefined;
-
-      if ((!nextToken && !nextStart) || (nextToken === token && nextStart === nextPageStart)) {
-        break;
-      }
-
-      token = nextToken;
-      nextPageStart = nextStart;
+      if (result.terminal) break;
+      token = result.nextToken;
+      nextPageStart = result.nextPageStart;
       page++;
       await new Promise((r) => setTimeout(r, 300));
     }

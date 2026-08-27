@@ -193,3 +193,46 @@ export function generateAnnotationId(params: {
   const id = deterministicUUID("hakim:annotation", stableKey);
   return { id, stableKey };
 }
+
+export type AnnotationIdentityStrategy = "source_key" | "location_anchor" | "page_text_fallback" | "book_text_fallback";
+
+/**
+ * Identity V2 deliberately excludes mutable highlight text when a provider key
+ * or Kindle location anchor is available. Once assigned, callers persist the ID
+ * and use reconciliation to handle changed ranges or expanded highlights.
+ */
+export function generateAnnotationIdentityV2(params: {
+  bookId: string;
+  type?: string;
+  sourceAnnotationKey?: string;
+  locationStart?: number;
+  page?: number;
+  rawText: string;
+}): { id: string; stableKey: string; strategy: AnnotationIdentityStrategy } {
+  const type = params.type || "highlight";
+  let stableKey: string;
+  let strategy: AnnotationIdentityStrategy;
+
+  if (params.sourceAnnotationKey?.trim()) {
+    stableKey = `source:${params.bookId}:${params.sourceAnnotationKey.trim()}`;
+    strategy = "source_key";
+  } else if (params.locationStart !== undefined) {
+    stableKey = `location:${params.bookId}:${type}:${params.locationStart}`;
+    strategy = "location_anchor";
+  } else {
+    const textHash = computePayloadHash(normalizeText(params.rawText)).substring(0, 16);
+    if (params.page !== undefined) {
+      stableKey = `page:${params.bookId}:${type}:${params.page}:${textHash}`;
+      strategy = "page_text_fallback";
+    } else {
+      stableKey = `fallback:${params.bookId}:${type}:${textHash}`;
+      strategy = "book_text_fallback";
+    }
+  }
+
+  return {
+    id: deterministicUUID("hakim:annotation:v2", stableKey),
+    stableKey,
+    strategy,
+  };
+}

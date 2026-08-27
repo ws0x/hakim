@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@hakim/domain": "workspace:*",
-    "@notionhq/client": "^2.2.15"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@hakim/test-fixtures": "workspace:*",

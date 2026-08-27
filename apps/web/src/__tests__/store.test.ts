@@ -84,6 +84,20 @@ You do not rise to the level of your goals. You fall to the level of your system
     expect(result.highlights[1]?.rawText).toContain("You fall to the level of your systems");
   });
 
+  it("parses Readwise CSV files in browser via FileImportAdapter", () => {
+    const sampleCsv = `"Highlight","Book Title","Book Author","Location","Color","Annotation"
+"Reliability means continuing to work.","Designing Data-Intensive Applications","Martin Kleppmann","450","yellow","Core note"
+"Small changes lead to remarkable results.","Atomic Habits","James Clear","120","pink","Habit loop"`;
+
+    const result = FileImportAdapter.parseReadwiseCsv(sampleCsv);
+    expect(result.books.length).toBe(2);
+    expect(result.highlights.length).toBe(2);
+    expect(result.books[0]?.title).toBe("Designing Data-Intensive Applications");
+    expect(result.highlights[0]?.color).toBe("yellow");
+    expect(result.highlights[0]?.sourceNote).toBe("Core note");
+    expect(result.highlights[1]?.color).toBe("pink");
+  });
+
   it("builds bidirectional graph links between books, highlights, and topic hubs", () => {
     const graph = GraphBuilder.buildGraph(store.getState().books, store.getState().highlights);
     const bookNodes = graph.nodes.filter((n) => n.type === "book");
