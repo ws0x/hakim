@@ -12,6 +12,7 @@ function createMockElement(tag: string): any {
 
   const mockCtx = {
     createLinearGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+    createRadialGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
     fillRect: vi.fn(),
     strokeRect: vi.fn(),
     fillText: vi.fn(),
@@ -122,6 +123,12 @@ describe("Social Quote Card Generator & Slideover Drawer", () => {
     modal.renderCanvas();
     expect((modal as any).canvas.width).toBe(1920);
     expect((modal as any).canvas.height).toBe(1080);
+
+    // 4:5 Portrait
+    (modal as any).currentRatio = "4:5";
+    modal.renderCanvas();
+    expect((modal as any).canvas.width).toBe(1080);
+    expect((modal as any).canvas.height).toBe(1350);
   });
 
   it("applies theme gradients (obsidian, sunset, emerald, minimal)", () => {

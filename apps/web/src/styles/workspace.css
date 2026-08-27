@@ -1382,17 +1382,17 @@ body {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  justify-content: space-between;
+  gap: 16px;
+  overflow-y: auto;
 }
 
 .control-label {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--app-text-dim);
   letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   display: block;
 }
 
@@ -1400,7 +1400,7 @@ body {
 .ratio-options-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .theme-btn,
@@ -1408,7 +1408,7 @@ body {
   background: var(--app-card-bg);
   border: 1px solid var(--app-border);
   color: var(--app-text-muted);
-  padding: 8px;
+  padding: 7px;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
@@ -1421,6 +1421,66 @@ body {
   background: var(--app-accent);
   color: #ffffff;
   border-color: var(--app-accent);
+}
+
+.typo-options-row {
+  display: flex;
+  gap: 8px;
+}
+
+.typo-btn-group {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--app-border);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.typo-toggle-btn,
+.align-btn {
+  background: transparent;
+  border: none;
+  color: var(--app-text-muted);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.typo-toggle-btn.active,
+.align-btn.active {
+  background: var(--app-accent);
+  color: #ffffff;
+}
+
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.slider-val-text {
+  font-size: 11px;
+  color: var(--app-accent);
+  font-family: monospace;
+}
+
+.quote-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+.modal-actions-footer {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* 3D Active Recall Flashcards */
