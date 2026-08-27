@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.js",
+    "package": "node package-extension.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
