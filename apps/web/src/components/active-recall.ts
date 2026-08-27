@@ -5,6 +5,8 @@ export interface ReviewStats {
   reviewed: number;
   mastered: number;
   hard: number;
+  currentStreak: number;
+  bestStreak: number;
 }
 
 export class ActiveRecallComponent {
@@ -12,7 +14,7 @@ export class ActiveRecallComponent {
   private deck: HighlightItem[] = [];
   private currentIndex = 0;
   private isFlipped = false;
-  private stats: ReviewStats = { total: 0, reviewed: 0, mastered: 0, hard: 0 };
+  private stats: ReviewStats = { total: 0, reviewed: 0, mastered: 0, hard: 0, currentStreak: 0, bestStreak: 0 };
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -28,6 +30,8 @@ export class ActiveRecallComponent {
       reviewed: 0,
       mastered: 0,
       hard: 0,
+      currentStreak: 0,
+      bestStreak: 0,
     };
     this.render();
   }
@@ -65,18 +69,34 @@ export class ActiveRecallComponent {
   public rateCard(rating: "hard" | "good" | "mastered"): void {
     if (rating === "hard") {
       this.stats.hard++;
+      this.stats.currentStreak = 0;
       // Put back at the end of deck for re-testing
       if (this.currentIndex < this.deck.length) {
         const current = this.deck[this.currentIndex]!;
         this.deck.push(current);
       }
+    } else if (rating === "good") {
+      this.stats.currentStreak++;
+      this.stats.bestStreak = Math.max(this.stats.bestStreak, this.stats.currentStreak);
     } else if (rating === "mastered") {
       this.stats.mastered++;
+      this.stats.currentStreak++;
+      this.stats.bestStreak = Math.max(this.stats.bestStreak, this.stats.currentStreak);
     }
 
     this.stats.reviewed++;
     this.currentIndex++;
     this.isFlipped = false;
+    this.render();
+  }
+
+  public shuffle(): void {
+    for (let i = this.deck.length - 1; i > this.currentIndex; i--) {
+      const j = this.currentIndex + Math.floor(Math.random() * (i - this.currentIndex + 1));
+      const temp = this.deck[i]!;
+      this.deck[i] = this.deck[j]!;
+      this.deck[j] = temp;
+    }
     this.render();
   }
 
@@ -88,6 +108,8 @@ export class ActiveRecallComponent {
       reviewed: 0,
       mastered: 0,
       hard: 0,
+      currentStreak: 0,
+      bestStreak: 0,
     };
     this.render();
   }
@@ -117,11 +139,11 @@ export class ActiveRecallComponent {
     stage.className = "flashcard-stage";
 
     stage.innerHTML = `
-      <!-- Progress Bar -->
+      <!-- Progress Bar & Streak Info -->
       <div class="flashcard-progress-bar-wrapper">
         <div class="flashcard-progress-info">
           <span>Card <strong>${this.currentIndex + 1}</strong> of <strong>${this.deck.length}</strong></span>
-          <span>${progressPercent}% Complete</span>
+          <span class="flashcard-streak-badge">${this.stats.currentStreak > 1 ? `🔥 ${this.stats.currentStreak} Streak` : `${progressPercent}% Complete`}</span>
         </div>
         <div class="flashcard-progress-track">
           <div class="flashcard-progress-fill" style="width: ${progressPercent}%"></div>
@@ -134,16 +156,16 @@ export class ActiveRecallComponent {
           <!-- FRONT SIDE -->
           <div class="flashcard-face flashcard-front">
             <div class="flashcard-header">
-              <span class="flashcard-book-badge">📖 ${currentCard.bookTitle}</span>
+              <span class="flashcard-book-badge">📖 ${this.escapeHtml(currentCard.bookTitle)}</span>
               <span class="flashcard-hint-badge">💡 Active Recall Prompt</span>
             </div>
             <div class="flashcard-body">
-              <p class="flashcard-prompt-label">What is the core insight or principle behind this quote?</p>
-              <blockquote class="flashcard-prompt-quote">“${currentCard.rawText}”</blockquote>
+              <p class="flashcard-prompt-label">What is the core insight or cognitive principle behind this quote?</p>
+              <blockquote class="flashcard-prompt-quote">“${this.escapeHtml(currentCard.rawText)}”</blockquote>
             </div>
             <div class="flashcard-footer">
               <button id="btn-flip-card-front" class="btn btn-primary">
-                <span>Show Full Reflection (Press Space)</span>
+                <span>Reveal Concept Takeaway (Press Space)</span>
               </button>
             </div>
           </div>
@@ -151,33 +173,33 @@ export class ActiveRecallComponent {
           <!-- BACK SIDE -->
           <div class="flashcard-face flashcard-back">
             <div class="flashcard-header">
-              <span class="flashcard-book-badge">📖 ${currentCard.bookTitle}</span>
+              <span class="flashcard-book-badge">📖 ${this.escapeHtml(currentCard.bookTitle)}</span>
               <span class="flashcard-loc-pill">${currentCard.location ? `Loc ${currentCard.location}` : "Note"}</span>
             </div>
             <div class="flashcard-body">
               <div class="flashcard-back-section">
                 <h4 class="section-sublabel">Original Highlight</h4>
-                <p class="flashcard-back-quote">“${currentCard.rawText}”</p>
+                <p class="flashcard-back-quote">“${this.escapeHtml(currentCard.rawText)}”</p>
               </div>
 
               ${currentCard.sourceNote ? `
                 <div class="flashcard-back-section">
                   <h4 class="section-sublabel">✍️ Your Note</h4>
-                  <p class="flashcard-back-note">${currentCard.sourceNote}</p>
+                  <p class="flashcard-back-note">${this.escapeHtml(currentCard.sourceNote)}</p>
                 </div>
               ` : ""}
 
               ${currentCard.interpretation ? `
                 <div class="flashcard-back-section">
                   <h4 class="section-sublabel">🧠 Hakim Concept Takeaway</h4>
-                  <p class="flashcard-back-interp">${currentCard.interpretation}</p>
+                  <p class="flashcard-back-interp">${this.escapeHtml(currentCard.interpretation)}</p>
                 </div>
               ` : ""}
             </div>
 
             <div class="flashcard-ratings-row">
               <button class="rating-btn rate-hard" data-rate="hard" title="Shortcut: 1 or Left Arrow">
-                <span>🔴 Again (Hard)</span>
+                <span>🔴 Again</span>
               </button>
               <button class="rating-btn rate-good" data-rate="good" title="Shortcut: 2 or Down Arrow">
                 <span>🔵 Good</span>
@@ -193,7 +215,7 @@ export class ActiveRecallComponent {
       <!-- Quick Shortcuts Legend -->
       <div class="flashcard-shortcuts-legend">
         <span><kbd>Space</kbd> Flip</span>
-        <span><kbd>1</kbd> Hard</span>
+        <span><kbd>1</kbd> Again</span>
         <span><kbd>2</kbd> Good</span>
         <span><kbd>3</kbd> Mastered</span>
       </div>
@@ -261,5 +283,9 @@ export class ActiveRecallComponent {
 
     summary.querySelector("#btn-restart-deck")?.addEventListener("click", () => this.restart());
     this.container.appendChild(summary);
+  }
+
+  private escapeHtml(str: string): string {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 }
