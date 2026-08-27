@@ -1,4 +1,4 @@
-import type { GraphData, GraphNode, GraphLink } from "../core/types.js";
+import type { GraphData, GraphNode, GraphLink, AnnotationColor } from "../core/types.js";
 
 export interface SimulationNode extends GraphNode {
   x: number;
@@ -7,8 +7,6 @@ export interface SimulationNode extends GraphNode {
   vy: number;
   radius: number;
   isDragging?: boolean;
-  pinX?: number;
-  pinY?: number;
 }
 
 export interface SimulationLink extends GraphLink {
@@ -28,27 +26,27 @@ export interface GraphPhysicsConfig {
 }
 
 export class CanvasGraphEngine {
+  private container: HTMLElement;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private container: HTMLElement;
 
   private nodes: SimulationNode[] = [];
   private links: SimulationLink[] = [];
   private nodeMap = new Map<string, SimulationNode>();
 
-  // Physics params
+  // Physics Simulation
   private alpha = 1;
   private alphaMin = 0.0005;
-  private alphaDecay = 0.018;
+  private alphaDecay = 0.015;
   private isSimulationRunning = true;
 
-  // Obsidian Physics Controls
+  // Obsidian Physics Controls - Calibrated for spacious constellation feel
   public config: GraphPhysicsConfig = {
-    gravity: 0.04,
-    repulsion: 550,
-    linkDistance: 110,
-    linkStrength: 0.15,
-    damping: 0.85,
+    gravity: 0.008,
+    repulsion: 1400,
+    linkDistance: 160,
+    linkStrength: 0.12,
+    damping: 0.88,
     nodeSizeMultiplier: 1.0,
     showLabels: true,
     showParticles: true,
@@ -101,7 +99,7 @@ export class CanvasGraphEngine {
 
   private initStarfield(): void {
     this.starfieldGrid = [];
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 140; i++) {
       this.starfieldGrid.push({
         x: (Math.random() - 0.5) * 4000,
         y: (Math.random() - 0.5) * 4000,
@@ -117,18 +115,50 @@ export class CanvasGraphEngine {
 
     this.nodeMap.clear();
 
-    // Preserve existing node positions if present, or distribute organically
+    const bookNodes = data.nodes.filter((n) => n.type === "book");
+    const otherNodes = data.nodes.filter((n) => n.type !== "book");
+
+    // Distribute Books in a wide outer perimeter
+    const bookPositions = new Map<string, { x: number; y: number }>();
+    bookNodes.forEach((b, idx) => {
+      const angle = (idx / Math.max(1, bookNodes.length)) * 2 * Math.PI - Math.PI / 2;
+      const radius = 340 + (idx % 2) * 50;
+      bookPositions.set(b.id, {
+        x: width / 2 + Math.cos(angle) * radius,
+        y: height / 2 + Math.sin(angle) * radius,
+      });
+    });
+
     this.nodes = data.nodes.map((n, i) => {
       const existing = this.nodes.find((old) => old.id === n.id);
-      const angle = (i / Math.max(1, data.nodes.length)) * 2 * Math.PI;
-      const dist = n.type === "book" ? 140 : n.type === "topic" ? 240 : 320 + (i % 6) * 25;
+      const baseRadius = n.size || (n.type === "book" ? 26 : n.type === "topic" ? 16 : 8);
 
-      const baseRadius = n.size || (n.type === "book" ? 24 : n.type === "topic" ? 16 : 8);
+      let initX = width / 2;
+      let initY = height / 2;
+
+      if (existing) {
+        initX = existing.x;
+        initY = existing.y;
+      } else if (n.type === "book") {
+        const pos = bookPositions.get(n.id) || { x: width / 2, y: height / 2 };
+        initX = pos.x;
+        initY = pos.y;
+      } else if (n.type === "topic") {
+        const angle = (i / Math.max(1, data.nodes.length)) * 2 * Math.PI;
+        initX = width / 2 + Math.cos(angle) * 180 + (Math.random() - 0.5) * 60;
+        initY = height / 2 + Math.sin(angle) * 180 + (Math.random() - 0.5) * 60;
+      } else {
+        // Highlight satellite around linked book or center
+        const angle = Math.random() * 2 * Math.PI;
+        const dist = 80 + Math.random() * 90;
+        initX = width / 2 + Math.cos(angle) * dist + (Math.random() - 0.5) * 100;
+        initY = height / 2 + Math.sin(angle) * dist + (Math.random() - 0.5) * 100;
+      }
 
       const simNode: SimulationNode = {
         ...n,
-        x: existing ? existing.x : width / 2 + Math.cos(angle) * dist + (Math.random() - 0.5) * 50,
-        y: existing ? existing.y : height / 2 + Math.sin(angle) * dist + (Math.random() - 0.5) * 50,
+        x: initX,
+        y: initY,
         vx: existing ? existing.vx : (Math.random() - 0.5) * 2,
         vy: existing ? existing.vy : (Math.random() - 0.5) * 2,
         radius: baseRadius,
@@ -235,10 +265,10 @@ export class CanvasGraphEngine {
         if (distSq === 0) distSq = 1;
 
         const dist = Math.sqrt(distSq);
-        const minDist = (nodeA.radius + nodeB.radius) * this.config.nodeSizeMultiplier + 20;
+        const minDist = (nodeA.radius + nodeB.radius) * this.config.nodeSizeMultiplier + 36;
 
         // Repulsion force
-        const multiplier = nodeA.type === "book" || nodeB.type === "book" ? 3.0 : 1.2;
+        const multiplier = nodeA.type === "book" || nodeB.type === "book" ? 3.5 : 1.4;
         const force = (repulsion / distSq) * multiplier;
         const fx = (dx / dist) * force;
         const fy = (dy / dist) * force;
@@ -254,7 +284,7 @@ export class CanvasGraphEngine {
 
         // Collision separation
         if (dist < minDist) {
-          const overlap = (minDist - dist) * 0.6 * this.alpha;
+          const overlap = (minDist - dist) * 0.7 * this.alpha;
           const sx = (dx / dist) * overlap;
           const sy = (dy / dist) * overlap;
           if (!nodeA.isDragging) { nodeA.x -= sx; nodeA.y -= sy; }
@@ -279,133 +309,165 @@ export class CanvasGraphEngine {
       const fx = (dx / dist) * displacement;
       const fy = (dy / dist) * displacement;
 
-      if (!source.isDragging) { source.vx += fx; source.vy += fy; }
-      if (!target.isDragging) { target.vx -= fx; target.vy -= fy; }
+      if (!source.isDragging) {
+        source.vx += fx;
+        source.vy += fy;
+      }
+      if (!target.isDragging) {
+        target.vx -= fx;
+        target.vy -= fy;
+      }
     }
 
-    // 4. Velocity Damping & Smooth Position integration
-    const damping = this.config.damping;
+    // 4. Update Node Positions with Exponential Damping
     for (const node of this.nodes) {
       if (node.isDragging) continue;
-      node.vx *= damping;
-      node.vy *= damping;
+
+      node.vx *= this.config.damping;
+      node.vy *= this.config.damping;
+
       node.x += node.vx;
       node.y += node.vy;
     }
 
-    this.alpha += (0 - this.alpha) * this.alphaDecay;
+    // Alpha decay
+    this.alpha *= 1 - this.alphaDecay;
   }
 
   public render(): void {
-    const width = this.canvas.width / (window.devicePixelRatio || 1);
-    const height = this.canvas.height / (window.devicePixelRatio || 1);
+    const dpr = window.devicePixelRatio || 1;
+    const width = this.canvas.width / dpr;
+    const height = this.canvas.height / dpr;
 
-    // Deep cosmic background
+    this.ctx.clearRect(0, 0, width, height);
+
+    // 1. Render Cosmic Deep Canvas Background
     this.ctx.fillStyle = "#0a0d14";
     this.ctx.fillRect(0, 0, width, height);
 
+    // 2. Render Parallax Starfield Particles
+    if (this.config.showParticles) {
+      this.ctx.save();
+      for (const p of this.starfieldGrid) {
+        const px = ((p.x * this.scale + this.offsetX) % width + width) % width;
+        const py = ((p.y * this.scale + this.offsetY) % height + height) % height;
+
+        this.ctx.beginPath();
+        this.ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        this.ctx.fillStyle = `rgba(168, 185, 247, ${p.opacity * Math.min(1, this.scale)})`;
+        this.ctx.fill();
+      }
+      this.ctx.restore();
+    }
+
     this.ctx.save();
-    // Apply Pan & Zoom Transform
     this.ctx.translate(this.offsetX, this.offsetY);
     this.ctx.scale(this.scale, this.scale);
+    this.ctx.translate(-width / 2, -height / 2);
 
-    // 1. Draw Starfield Grid Background
-    if (this.config.showParticles) {
-      this.ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-      for (const star of this.starfieldGrid) {
-        this.ctx.beginPath();
-        this.ctx.arc(star.x, star.y, star.size / this.scale, 0, 2 * Math.PI);
-        this.ctx.globalAlpha = star.opacity;
-        this.ctx.fill();
-      }
-      this.ctx.globalAlpha = 1.0;
-    }
+    const activeNode = this.hoveredNode || this.selectedNode;
 
-    // 2. Draw Links with Glow
+    // 3. Render Links
     for (const link of this.links) {
       if (!link.sourceNode || !link.targetNode) continue;
-      const isHighlighted =
-        (this.hoveredNode && (link.sourceNode.id === this.hoveredNode.id || link.targetNode.id === this.hoveredNode.id)) ||
-        (this.selectedNode && (link.sourceNode.id === this.selectedNode.id || link.targetNode.id === this.selectedNode.id));
+      const source = link.sourceNode;
+      const target = link.targetNode;
 
-      const isDimmed = (this.hoveredNode || this.selectedNode) && !isHighlighted;
+      const isConnected =
+        activeNode &&
+        (source.id === activeNode.id || target.id === activeNode.id);
 
       this.ctx.beginPath();
-      this.ctx.moveTo(link.sourceNode.x - width / 2, link.sourceNode.y - height / 2);
-      this.ctx.lineTo(link.targetNode.x - width / 2, link.targetNode.y - height / 2);
+      this.ctx.moveTo(source.x, source.y);
+      this.ctx.lineTo(target.x, target.y);
 
-      if (isHighlighted) {
-        this.ctx.strokeStyle = "rgba(168, 85, 247, 0.9)";
-        this.ctx.lineWidth = 2.2 / Math.sqrt(this.scale);
-        this.ctx.shadowColor = "rgba(168, 85, 247, 0.8)";
-        this.ctx.shadowBlur = 8;
+      if (isConnected) {
+        this.ctx.strokeStyle = "rgba(168, 85, 247, 0.85)";
+        this.ctx.lineWidth = (link.type === "contains" ? 2.5 : 1.8) / Math.sqrt(this.scale);
       } else {
-        this.ctx.shadowBlur = 0;
+        const isDimmed = activeNode !== null;
         this.ctx.strokeStyle = isDimmed
-          ? "rgba(255, 255, 255, 0.02)"
-          : link.type === "shares_topic"
-          ? "rgba(56, 189, 248, 0.22)"
-          : "rgba(255, 255, 255, 0.08)";
+          ? "rgba(255, 255, 255, 0.03)"
+          : link.type === "contains"
+          ? "rgba(255, 255, 255, 0.12)"
+          : "rgba(56, 189, 248, 0.18)";
         this.ctx.lineWidth = (link.type === "contains" ? 1.2 : 0.8) / Math.sqrt(this.scale);
       }
+
       this.ctx.stroke();
-      this.ctx.shadowBlur = 0;
     }
 
-    // 3. Draw Nodes with Radiant Glow Halos
+    // 4. Render Nodes with Obsidian-grade Glowing Halos
     for (const node of this.nodes) {
-      const nx = node.x - width / 2;
-      const ny = node.y - height / 2;
-      const r = node.radius * this.config.nodeSizeMultiplier;
-
       const isHovered = this.hoveredNode?.id === node.id;
       const isSelected = this.selectedNode?.id === node.id;
-      const isConnectedToActive =
-        (this.hoveredNode && this.areNodesConnected(node, this.hoveredNode)) ||
-        (this.selectedNode && this.areNodesConnected(node, this.selectedNode));
+      const isConnectedToActive = activeNode ? this.areNodesConnected(node, activeNode) : false;
+      const isDimmed = activeNode !== null && !isHovered && !isSelected && !isConnectedToActive;
 
-      const isDimmed = (this.hoveredNode || this.selectedNode) && !isHovered && !isSelected && !isConnectedToActive;
+      const nx = node.x;
+      const ny = node.y;
+      const r = node.radius * this.config.nodeSizeMultiplier;
 
       this.ctx.save();
-      this.ctx.globalAlpha = isDimmed ? 0.12 : 1.0;
+      this.ctx.globalAlpha = isDimmed ? 0.2 : 1.0;
 
-      // Outer Ambient Glow Halo
-      if (node.type === "book" || node.type === "topic" || isHovered || isSelected) {
-        const glowRadius = r + (node.type === "book" ? 10 : 6);
-        const glowGrad = this.ctx.createRadialGradient(nx, ny, r * 0.6, nx, ny, glowRadius);
-        const glowColor = node.type === "book" ? "rgba(168, 85, 247, 0.35)" : node.type === "topic" ? "rgba(56, 189, 248, 0.35)" : "rgba(255, 255, 255, 0.3)";
-        glowGrad.addColorStop(0, glowColor);
-        glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      // Radiant Multi-Tier Halos
+      let coreColor = "#6366f1";
+      let haloColor = "rgba(99, 102, 241, 0.25)";
 
-        this.ctx.beginPath();
-        this.ctx.arc(nx, ny, glowRadius, 0, 2 * Math.PI);
-        this.ctx.fillStyle = glowGrad;
-        this.ctx.fill();
+      if (node.type === "book") {
+        coreColor = "#a855f7";
+        haloColor = "rgba(168, 85, 247, 0.35)";
+      } else if (node.type === "topic") {
+        coreColor = "#06b6d4";
+        haloColor = "rgba(6, 182, 212, 0.3)";
+      } else if (node.color === "yellow") {
+        coreColor = "#f59e0b";
+        haloColor = "rgba(245, 158, 11, 0.25)";
+      } else if (node.color === "blue") {
+        coreColor = "#38bdf8";
+        haloColor = "rgba(56, 189, 248, 0.25)";
+      } else if (node.color === "pink") {
+        coreColor = "#f43f5e";
+        haloColor = "rgba(244, 63, 94, 0.25)";
+      } else if (node.color === "orange") {
+        coreColor = "#fb923c";
+        haloColor = "rgba(251, 146, 60, 0.25)";
       }
 
-      // Outer Ring for Books & Selected Nodes
-      if (node.type === "book" || isSelected) {
+      // Outer Halo Glow
+      const haloRadius = (isHovered || isSelected ? r * 2.4 : r * 1.6) / Math.sqrt(this.scale);
+      const grad = this.ctx.createRadialGradient(nx, ny, r * 0.5, nx, ny, haloRadius);
+      grad.addColorStop(0, haloColor);
+      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      this.ctx.fillStyle = grad;
+      this.ctx.beginPath();
+      this.ctx.arc(nx, ny, haloRadius, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      // Double Concentric Ring for Books
+      if (node.type === "book") {
         this.ctx.beginPath();
-        this.ctx.arc(nx, ny, r + 4, 0, 2 * Math.PI);
-        this.ctx.strokeStyle = isSelected ? "#38bdf8" : "rgba(168, 85, 247, 0.6)";
-        this.ctx.lineWidth = 1.8 / Math.sqrt(this.scale);
+        this.ctx.arc(nx, ny, r + 5 / Math.sqrt(this.scale), 0, Math.PI * 2);
+        this.ctx.strokeStyle = isHovered || isSelected ? "#ffffff" : "rgba(168, 85, 247, 0.6)";
+        this.ctx.lineWidth = 2 / Math.sqrt(this.scale);
         this.ctx.stroke();
       }
 
-      // Inner Core Orb
+      // Main Node Orb
       this.ctx.beginPath();
-      this.ctx.arc(nx, ny, r, 0, 2 * Math.PI);
-      this.ctx.fillStyle = node.color;
+      this.ctx.arc(nx, ny, r, 0, Math.PI * 2);
+      this.ctx.fillStyle = coreColor;
       this.ctx.fill();
 
       this.ctx.strokeStyle = isHovered || isSelected ? "#ffffff" : "rgba(255, 255, 255, 0.35)";
       this.ctx.lineWidth = (isHovered ? 2.5 : 1.2) / Math.sqrt(this.scale);
       this.ctx.stroke();
 
-      // Dynamic Level of Detail (LOD) Labels
+      // Clean Level of Detail (LOD) Labels without clumping
       const shouldShowLabel =
         this.config.showLabels &&
-        (node.type === "book" || node.type === "topic" || isHovered || isSelected || isConnectedToActive || this.scale > 0.85);
+        (node.type === "book" || node.type === "topic" || isHovered || isSelected || isConnectedToActive || this.scale > 1.8);
 
       if (shouldShowLabel) {
         const fontSize = node.type === "book" ? 13 : node.type === "topic" ? 11.5 : 10;
@@ -419,12 +481,12 @@ export class CanvasGraphEngine {
           displayLabel = displayLabel.substring(0, 22) + "...";
         }
 
-        // Label Pill / Text Shadow
+        // Label Pill
         const labelY = ny + r + (4 / Math.sqrt(this.scale));
-        this.ctx.fillStyle = "rgba(10, 13, 20, 0.75)";
+        this.ctx.fillStyle = "rgba(10, 13, 20, 0.85)";
         const textMetrics = this.ctx.measureText(displayLabel);
-        const padX = 4 / Math.sqrt(this.scale);
-        const padY = 2 / Math.sqrt(this.scale);
+        const padX = 5 / Math.sqrt(this.scale);
+        const padY = 2.5 / Math.sqrt(this.scale);
         const textHeight = fontSize / Math.sqrt(this.scale);
 
         this.ctx.fillRect(
@@ -434,7 +496,7 @@ export class CanvasGraphEngine {
           textHeight + padY * 2
         );
 
-        this.ctx.fillStyle = isHovered || isSelected ? "#ffffff" : node.type === "book" ? "#f1f5f9" : "rgba(255, 255, 255, 0.85)";
+        this.ctx.fillStyle = isHovered || isSelected ? "#ffffff" : node.type === "book" ? "#f1f5f9" : node.type === "topic" ? "#67e8f9" : "rgba(255, 255, 255, 0.85)";
         this.ctx.fillText(displayLabel, nx, labelY);
       }
 
@@ -501,15 +563,15 @@ export class CanvasGraphEngine {
           <span class="hud-section-label">Forces</span>
           <div class="hud-slider-group">
             <label>Repulsion <span id="val-repulsion">${this.config.repulsion}</span></label>
-            <input type="range" id="slider-repulsion" min="100" max="1200" value="${this.config.repulsion}" />
+            <input type="range" id="slider-repulsion" min="300" max="2500" value="${this.config.repulsion}" />
           </div>
           <div class="hud-slider-group">
             <label>Link Distance <span id="val-distance">${this.config.linkDistance}</span></label>
-            <input type="range" id="slider-distance" min="40" max="260" value="${this.config.linkDistance}" />
+            <input type="range" id="slider-distance" min="60" max="300" value="${this.config.linkDistance}" />
           </div>
           <div class="hud-slider-group">
-            <label>Center Gravity <span id="val-gravity">${Math.round(this.config.gravity * 100)}</span></label>
-            <input type="range" id="slider-gravity" min="1" max="15" value="${Math.round(this.config.gravity * 100)}" />
+            <label>Center Gravity <span id="val-gravity">${Math.round(this.config.gravity * 1000)}</span></label>
+            <input type="range" id="slider-gravity" min="1" max="25" value="${Math.round(this.config.gravity * 1000)}" />
           </div>
         </div>
 
@@ -558,7 +620,7 @@ export class CanvasGraphEngine {
 
     const sGrav = this.hudElement.querySelector("#slider-gravity") as HTMLInputElement | null;
     sGrav?.addEventListener("input", () => {
-      this.config.gravity = Number(sGrav.value) / 100;
+      this.config.gravity = Number(sGrav.value) / 1000;
       const val = this.hudElement?.querySelector("#val-gravity");
       if (val) val.textContent = sGrav.value;
       this.alpha = Math.max(this.alpha, 0.4);

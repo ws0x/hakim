@@ -183,8 +183,8 @@ describe("Canvas 2D Force-Directed Graph Engine", () => {
   });
 
   it("initializes and updates Obsidian HUD physics parameters", () => {
-    expect(engine.config.repulsion).toBe(550);
-    expect(engine.config.linkDistance).toBe(110);
+    expect(engine.config.repulsion).toBe(1400);
+    expect(engine.config.linkDistance).toBe(160);
     expect(engine.config.showLabels).toBe(true);
     expect(engine.config.showParticles).toBe(true);
 

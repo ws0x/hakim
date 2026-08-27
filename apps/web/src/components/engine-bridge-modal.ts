@@ -130,23 +130,23 @@ export class EngineBridgeModal {
         statusDot.className = "status-indicator-dot dot-emerald";
       }
       if (statusText) {
-        statusText.textContent = `● Engine Online (v${health.version || "1.0.0"})`;
+        statusText.textContent = `Engine Online (v${health.version || "1.0.0"})`;
       }
       if (subText) {
         subText.textContent = `SQLite Store: ${health.booksCount || 0} books, ${health.annotCount || 0} highlights available`;
       }
-      this.updateHeaderBadge(true, "● Engine Online");
+      this.updateHeaderBadge(true, "Engine Online");
     } else {
       if (statusDot) {
         statusDot.className = "status-indicator-dot dot-gray";
       }
       if (statusText) {
-        statusText.textContent = "○ Engine Offline or Not Running";
+        statusText.textContent = "Engine Offline or Not Running";
       }
       if (subText) {
         subText.textContent = "Start with: pnpm --filter @hakim/engine start";
       }
-      this.updateHeaderBadge(false, "○ Engine Offline");
+      this.updateHeaderBadge(false, "Engine Offline");
     }
   }
 
