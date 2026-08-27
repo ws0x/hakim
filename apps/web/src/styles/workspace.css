@@ -2645,3 +2645,75 @@ body {
   color: #a855f7;
   font-weight: 600;
 }
+
+/* ==========================================================================
+   Responsive Mobile & Tablet Polish (Phase 8: Items 36-40)
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .app-workspace-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-pane {
+    display: none;
+  }
+
+  .quote-modal-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .quote-modal-controls {
+    border-left: none;
+    border-top: 1px solid var(--app-border);
+  }
+
+  .kanban-board-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .highlights-masonry-grid {
+    columns: 2 300px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: 0 12px;
+    height: 56px;
+  }
+
+  .brand-logo-text {
+    display: none;
+  }
+
+  .view-pill-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .highlights-masonry-grid {
+    columns: 1 100%;
+  }
+
+  .slideover-panel {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .flashcard-scene {
+    height: 420px;
+  }
+
+  .cmd-palette-window {
+    width: 95vw;
+  }
+
+  .cmd-hints {
+    display: none;
+  }
+}

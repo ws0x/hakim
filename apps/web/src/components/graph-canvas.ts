@@ -672,6 +672,75 @@ export class CanvasGraphEngine {
       this.offsetY = mouseY - (mouseY - this.offsetY) * (newScale / this.scale);
       this.scale = newScale;
     }, { passive: false });
+
+    // Touch Support for Mobile & Tablets (Touch Pan, Node Drag, Pinch Zoom)
+    let initialPinchDist: number | null = null;
+    let initialPinchScale = 1;
+
+    this.canvas.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0]!;
+        const rect = this.canvas.getBoundingClientRect();
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+
+        const hit = this.getNodeAtPosition(touchX, touchY);
+        if (hit) {
+          this.draggedNode = hit;
+          hit.isDragging = true;
+          this.alpha = 0.6;
+        } else {
+          this.isPanning = true;
+          this.panStartX = touchX;
+          this.panStartY = touchY;
+        }
+      } else if (e.touches.length === 2) {
+        const t1 = e.touches[0]!;
+        const t2 = e.touches[1]!;
+        initialPinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        initialPinchScale = this.scale;
+      }
+    }, { passive: true });
+
+    this.canvas.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0]!;
+        const rect = this.canvas.getBoundingClientRect();
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+
+        if (this.draggedNode) {
+          const width = this.canvas.width / (window.devicePixelRatio || 1);
+          const height = this.canvas.height / (window.devicePixelRatio || 1);
+          this.draggedNode.x = (touchX - this.offsetX) / this.scale + width / 2;
+          this.draggedNode.y = (touchY - this.offsetY) / this.scale + height / 2;
+          this.alpha = Math.max(this.alpha, 0.4);
+          return;
+        }
+
+        if (this.isPanning) {
+          this.offsetX += touchX - this.panStartX;
+          this.offsetY += touchY - this.panStartY;
+          this.panStartX = touchX;
+          this.panStartY = touchY;
+        }
+      } else if (e.touches.length === 2 && initialPinchDist !== null) {
+        const t1 = e.touches[0]!;
+        const t2 = e.touches[1]!;
+        const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const pinchRatio = currentDist / initialPinchDist;
+        this.scale = Math.max(this.minScale, Math.min(this.maxScale, initialPinchScale * pinchRatio));
+      }
+    }, { passive: true });
+
+    this.canvas.addEventListener("touchend", () => {
+      if (this.draggedNode) {
+        this.draggedNode.isDragging = false;
+        this.draggedNode = null;
+      }
+      this.isPanning = false;
+      initialPinchDist = null;
+    });
   }
 
   public zoomIn(): void {
